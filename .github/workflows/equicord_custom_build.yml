@@ -156,12 +156,12 @@ jobs:
               os_name=$(basename "$os_dir")
               mkdir -p "Equicord/dist/$os_name"
               cp -a "$os_dir"/* "Equicord/dist/$os_name/"
-              git add Equicord/dist/$os_name/
+              git add Equicord/dist/*
             fi
           done
 
           echo "Pushing dist folders"
-          git commit -am "🤖 feat(build/Equicord): Adding `Equicord/dist/$os_name/` folder"
+          git commit -am "🤖 feat(build/Equicord): Adding `Equicord/dist/` folder"
           git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
       - name: Commit Equicord changes
