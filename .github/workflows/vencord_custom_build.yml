@@ -1,4 +1,4 @@
-name: Vencord Universal Installer Builder
+name: [W.I.P] Vencord build
 
 on:
   schedule:
