@@ -1,7 +1,5 @@
 node_modules
 
-*.exe
-vencord_installer
 
 .idea
 .DS_Store
@@ -22,4 +20,4 @@ src/userplugins
 
 ExtensionCache/
 settings/
-# Dist directory is intentionally tracked in this fork
+# Dist and executable files are intentionally tracked in this fork
