@@ -71,6 +71,20 @@ jobs:
           rm -rf fakeProfile/.git
           find fakeProfile -type f -exec dos2unix {} +
 
+      - name: Modify .gitignore for dist
+        run: |
+          cd main-repo/Vencord
+          
+          # Loại bỏ dist khỏi .gitignore
+          if [ -f ".gitignore" ]; then
+            # Xóa tất cả các dòng liên quan đến dist
+            sed -i '/dist/d' .gitignore
+            # Thêm comment để giải thích
+            echo "# Dist directory is intentionally tracked in this fork" >> .gitignore
+          else
+            echo "No .gitignore file found"
+          fi
+
       - name: Build artifacts
         run: |
           cd main-repo/Vencord
@@ -91,6 +105,10 @@ jobs:
           
           # Xóa git repository tạm thời sau khi build
           rm -rf .git
+          
+          # Kiểm tra thư mục dist
+          echo "Dist directory contents:"
+          ls -la dist
 
       - name: Commit Vencord changes
         run: |
@@ -103,7 +121,16 @@ jobs:
           # Pull các thay đổi mới nhất từ remote
           git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           
-          # Thêm thư mục Vencord
+          # Đảm bảo thư mục dist được thêm vào
+          if [ -d "Vencord/dist" ]; then
+            echo "Adding dist directory to git"
+            git add Vencord/dist
+          else
+            echo "WARNING: dist directory not found!"
+            ls -la Vencord
+          fi
+          
+          # Thêm toàn bộ thư mục Vencord (bao gồm cả dist)
           git add Vencord
           
           if ! git diff-index --quiet HEAD -- Vencord; then
