@@ -182,6 +182,23 @@ jobs:
           
           mv dist dist-${{ runner.os }}
 
+      - name: Pushing dist directory
+        run: | 
+          if [ -d "Vencord/dist" ]; then
+            git config user.name "github-actions"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+
+            echo "Adding dist directory to git"
+            git add Vencord/dist
+
+            git commit -m "🤖 feat(build/Vencord): Dist directory adding"
+            git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+          else
+            echo "WARNING: dist directory not found!"
+            ls -la Vencord
+          fi
+
       - name: Build custom installer
         shell: bash
         run: |
@@ -295,10 +312,13 @@ jobs:
         with:
           path: dist-artifacts
 
-      - name: Combine artifacts
+      - name: Combine artifacts and commit Vencord changes
         run: |
           cd main-repo
-          
+          git config user.name "github-actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+
           # Tạo thư mục dist tổng hợp
           mkdir -p Vencord/dist
           
@@ -328,15 +348,9 @@ jobs:
           echo "Installers:"
           ls -la Vencord/installers
 
-      - name: Commit Vencord changes
-        run: |
-          cd main-repo
-          git config user.name "github-actions"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           git add Vencord
           if ! git diff-index --quiet HEAD -- Vencord; then
-            git commit -m "🤖 Multi-platform build: Vencord artifacts and installers $(date +'%Y-%m-%d %H:%M')"
+            git commit -m "🤖 feat(build/Vencord): Vencord artifacts and installers $(date +'%Y-%m-%d %H:%M')"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           else
             echo "No changes in Vencord directory"
