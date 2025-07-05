@@ -6,7 +6,7 @@ on:
   workflow_dispatch: # Cho phép kích hoạt thủ công
 
 jobs:
-  setup:
+  vencord-setup:
     runs-on: ubuntu-latest
     outputs:
       ven_hash: ${{ steps.hash.outputs.hash }}
@@ -69,7 +69,7 @@ jobs:
           rm -rf fakeProfile/.git
           find fakeProfile -type f -exec dos2unix {} +
 
-      - name: Vencord - Apply fix CSP for fakeProfile
+      - name: Apply fix CSP for fakeProfile
         run: python3 main-repo/src/csp_fix.py
 
       - name: Generate Vencord hash
@@ -85,8 +85,8 @@ jobs:
           path: main-repo/Vencord
           retention-days: 1
 
-  build:
-    needs: setup
+  vencord-build:
+    needs: vencord-setup
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -272,7 +272,7 @@ jobs:
           retention-days: 1
 
   combine-and-commit:
-    needs: [build]
+    needs: [vencord-setup, vencord-build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main repository
