@@ -46,15 +46,13 @@ def setup():
 
     print('Modify .gitignore for dist and executables')
     if os.path.exists('main-repo/Equicord/.gitignore'):
-        subprocess.run([
-            'sed', '-i',
-            '-e', '\'/dist/d\'',
-            '-e', '\'/\\.exe/d\'',
-            '-e', '\'/vencord_installer/d\'',
-            '.gitignore'
-        ], cwd = 'main-repo/Equicord')
+        subprocess.run(
+            'sed -i -e \'/dist/d\' -e \'/\\.exe/d\' -e \'/vencord_installer/d\' -e \'/equicord_installer/d\' .gitignore',
+            shell = True,
+            cwd = 'main-repo/Equicord'
+        )
 
-        #subprocess.run(['echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore'])
+        subprocess.run('echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore', shell = True)
     else:
         print('No .gitignore file found')
 
