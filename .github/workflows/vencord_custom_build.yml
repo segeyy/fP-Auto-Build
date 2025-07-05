@@ -1,4 +1,4 @@
-name: Vencord Auto-Updater
+name: Vencord Universal Installer Builder
 
 on:
   schedule:
@@ -95,6 +95,21 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install platform-specific tools
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            # Cài công cụ build cho Windows
+            choco install -y nsis python3 visualstudio2022-workload-vctools
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            # Cài công cụ build cho macOS
+            brew install fpm || echo "Brew not available, skipping"
+          elif [ "$RUNNER_OS" == "Linux" ]; then
+            # Cài công cụ build cho Linux
+            sudo apt-get update
+            sudo apt-get install -y fpm rpm
+          fi
+
       - name: Install dependencies
         run: |
           cd main-repo/Vencord
@@ -117,7 +132,6 @@ jobs:
           pnpm build
           pnpm buildWeb
           
-          # Xóa git repository tạm thời
           if [ "$RUNNER_OS" == "Windows" ]; then
             cmd.exe /c "rmdir /s /q .git"
           else
@@ -126,15 +140,51 @@ jobs:
           
           mv dist dist-${{ runner.os }}
 
+      - name: Build custom installer
+        shell: bash
+        run: |
+          cd main-repo
+          
+          # Clone repo installer đã fork
+          git clone --depth 1 https://github.com/segeyy/Installer.git
+          cd Installer
+          
+          # Cài đặt dependencies
+          npm i -g pnpm
+          pnpm i
+          
+          # Build installer cho nền tảng tương ứng
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            pnpm build:win
+            INSTALLER_PATH="dist/win-unpacked/VencordInstaller.exe"
+            OUTPUT_NAME="VencordInstaller-Custom.exe"
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            pnpm build:mac
+            INSTALLER_PATH="dist/mac/VencordInstaller.app"
+            OUTPUT_NAME="VencordInstaller-Custom.app"
+          elif [ "$RUNNER_OS" == "Linux" ]; then
+            pnpm build:linux
+            INSTALLER_PATH="dist/VencordInstaller.AppImage"
+            OUTPUT_NAME="VencordInstaller-Custom.AppImage"
+          fi
+          
+          # Tạo thư mục installers
+          mkdir -p ../Vencord/installers
+          
+          # Copy file installer
+          cp -r "$INSTALLER_PATH" "../Vencord/installers/$OUTPUT_NAME"
+          
+          echo "Installer built for $RUNNER_OS"
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ runner.os }}
-          path: main-repo/Vencord/dist-*
+          path: main-repo/Vencord
           retention-days: 1
 
   combine-and-commit:
-    needs: [setup, build]
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main repository
@@ -160,32 +210,32 @@ jobs:
       - name: Combine artifacts
         run: |
           cd main-repo
+          
+          # Tạo thư mục dist tổng hợp
           mkdir -p Vencord/dist
           
-          # Sửa lỗi: Điều chỉnh đường dẫn artifact
+          # Sao chép các bản build từ tất cả nền tảng
           for os_dir in dist-artifacts/dist-*; do
-            # Kiểm tra xem có file/thư mục nào không
             if [ -d "$os_dir" ]; then
-              os_name=$(basename $os_dir)
-              
-              # Sửa lỗi: Di chuyển vào thư mục đúng
-              artifact_content="$os_dir/dist-$os_name"
-              
-              if [ -d "$artifact_content" ]; then
-                mkdir -p Vencord/dist/$os_name
-                cp -a "$artifact_content"/* Vencord/dist/$os_name/
-              else
-                echo "Artifact content not found: $artifact_content"
-                # Thử sao chép trực tiếp nếu không tìm thấy cấu trúc thư mục
-                mkdir -p Vencord/dist/$os_name
-                cp -a "$os_dir"/* Vencord/dist/$os_name/
-              fi
+              os_name=$(basename "$os_dir")
+              mkdir -p "Vencord/dist/$os_name"
+              cp -a "$os_dir"/* "Vencord/dist/$os_name/"
+            fi
+          done
+          
+          # Tạo thư mục installers và sao chép tất cả installer
+          mkdir -p Vencord/installers
+          for artifact_dir in dist-artifacts/*; do
+            if [ -d "$artifact_dir/Vencord/installers" ]; then
+              cp -a "$artifact_dir/Vencord/installers"/* Vencord/installers/
             fi
           done
           
           # Kiểm tra nội dung
           echo "Combined dist contents:"
           ls -la Vencord/dist
+          echo "Installers:"
+          ls -la Vencord/installers
 
       - name: Commit Vencord changes
         run: |
@@ -195,7 +245,7 @@ jobs:
           git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           git add Vencord
           if ! git diff-index --quiet HEAD -- Vencord; then
-            git commit -m "🤖 Multi-platform build: Vencord artifacts $(date +'%Y-%m-%d %H:%M')"
+            git commit -m "🤖 Multi-platform build: Vencord artifacts and installers $(date +'%Y-%m-%d %H:%M')"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           else
             echo "No changes in Vencord directory"
