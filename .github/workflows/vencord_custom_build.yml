@@ -346,7 +346,6 @@ jobs:
 
           git add Vencord
           git commit -m "🤖 feat(build/Vencord): Vencord build upload"
-          git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
       - name: Commit Vencord changes
         run: |
