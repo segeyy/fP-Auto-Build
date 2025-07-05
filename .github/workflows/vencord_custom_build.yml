@@ -143,14 +143,14 @@ jobs:
             
           fi
 
+      - name: Vencord - Apply fix CSP for fakeProfile
+        run: python3 main-repo/src/csp_fix.py
+
       - name: Install dependencies
         run: |
           cd main-repo/Vencord
           npm i -g pnpm
           pnpm i
-
-      - name: Vencord - Apply fix CSP for fakeProfile
-        run: python3 main-repo/src/csp_fix.py
 
       - name: Build artifacts
         shell: bash
