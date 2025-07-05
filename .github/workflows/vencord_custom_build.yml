@@ -108,7 +108,7 @@ jobs:
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
             # Cài công cụ build cho Windows
-            choco install -y nsis python3 visualstudio2022-workload-vctools
+            choco install -y nsis python3
             
           elif [ "$RUNNER_OS" == "macOS" ]; then
             # Cài công cụ build cho macOS
