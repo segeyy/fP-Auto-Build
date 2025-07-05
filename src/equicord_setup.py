@@ -13,7 +13,7 @@ def setup():
 
     subprocess.run([
         'git', 'clone',
-        '--depth 1',
+        '--depth', '1',
         '--single-branch', '--branch main', f'{NeededStrings.equicord_url}',
         f'{NeededStrings.equicord_temp}'
     ])
@@ -29,10 +29,11 @@ def setup():
     print('Update Equicord from upstream')
     subprocess.run([
         'git', 'clone',
-        '--depth 1',
+        '--depth', '1',
         '--single-branch', '--branch main',
-        f'{NeededStrings.equicord_url}'
-    ], f'{NeededStrings.temp_upstream_path}')
+        f'{NeededStrings.equicord_url}',
+        f'{NeededStrings.temp_upstream_path}'
+    ])
 
     subprocess.run([
         'rsync', '-a', '--delete',
