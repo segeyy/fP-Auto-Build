@@ -167,6 +167,14 @@ jobs:
       - name: Combine artifacts
         run: |
           cd main-repo
+
+      - name: Combine artifacts and commit Equicord changes
+        run: |
+          cd main-repo
+          git config user.name "github-actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+
           mkdir -p Equicord/dist
 
           for os_dir in dist-artifacts/dist-*; do
@@ -181,12 +189,14 @@ jobs:
           echo "Combined dist contents:"
           ls -la Equicord/dist
 
-      - name: Commit Equicord changes
-        run: |
-          cd main-repo
-          git config user.name "github-actions"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+          if [ -d "Equicord/dist" ]; then
+            echo "Adding dist directory to git"
+            git add Equicord/dist
+          else
+            echo "WARNING: dist directory not found!"
+            ls -la Equicord
+          fi
+
           git add Equicord
           if ! git diff-index --quiet HEAD -- Equicord; then
             git commit -m "🤖 feat(build/Equicord): Equicord artifacts $(date +'%Y-%m-%d %H:%M')"
