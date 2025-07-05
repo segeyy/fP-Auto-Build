@@ -1,4 +1,4 @@
-﻿name: Equicord Auto-Updater
+﻿name: Equicord Builder
 
 on:
   schedule:
@@ -6,17 +6,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup:
+  equicord-setup:
     runs-on: ubuntu-latest
     outputs:
       ven_hash: ${{ steps.hash.outputs.hash }}
     steps:
-      - name: Install required tools
+      - name: Main - Install required tools
         run: |
           sudo apt-get update
           sudo apt-get install -y dos2unix rsync
 
-      - name: Checkout main repository
+      - name: Main - Checkout main repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.MY_PAT }}
@@ -25,34 +25,12 @@ jobs:
           submodules: false
           set-safe-directory: false
 
-      - name: Setup Equicord directory
-        run: |
-          mkdir -p main-repo/Equicord
-          git clone --depth 1 --single-branch --branch main https://github.com/Equicord/Equicord.git temp-equicord
-          rsync -a --delete --exclude='.git' --exclude='node_modules' temp-equicord/ main-repo/Equicord/
-          rm -rf temp-equicord
-
-      - name: Update Equicord from upstream
-        run: |
-          git clone --depth 1 --single-branch --branch main https://github.com/Equicord/Equicord.git temp-upstream
-          rsync -a --delete --exclude='.git' --exclude='node_modules' temp-upstream/ main-repo/Equicord/
-          rm -rf temp-upstream
-
-      - name: Modify .gitignore for dist and executables
-        run: |
-          cd main-repo/Equicord
-          if [ -f ".gitignore" ]; then
-            sed -i -e '/dist/d' -e '/\.exe/d' -e '/vencord_installer/d' .gitignore
-            echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore
-          else
-            echo "No .gitignore file found"
-          fi
-
-      - name: Install dependencies
-        run: |
-          cd main-repo/Equicord
-          npm i -g pnpm
-          pnpm i --no-frozen-lockfile
+      - name: Equicord - Setup build
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' 
+      - run: python3 main-repo/src/equicord_setup.py
 
       - name: Update plugin
         run: |
@@ -77,8 +55,8 @@ jobs:
           path: main-repo/Equicord
           retention-days: 1
 
-  build:
-    needs: setup
+  equicord-build:
+    needs: equicord-setup
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -117,8 +95,6 @@ jobs:
           pnpm build
           pnpm buildWeb
           
-          # ?: Down here what's commented. What?
-          # Xóa git repository tạm thời
           if [ "$RUNNER_OS" == "Windows" ]; then
             cmd.exe /c "rmdir /s /q .git"
           else
@@ -135,7 +111,7 @@ jobs:
           retention-days: 1
 
   combine-and-commit:
-    needs: [setup, build]
+    needs: [equicord-setup, equicord-build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main repository
@@ -163,14 +139,10 @@ jobs:
           cd main-repo
           mkdir -p Equicord/dist
           
-          # ?: Down here all what's commented. What?
-          # Sửa lỗi: Điều chỉnh đường dẫn artifact
           for os_dir in dist-artifacts/dist-*; do
-            # Kiểm tra xem có file/thư mục nào không
             if [ -d "$os_dir" ]; then
               os_name=$(basename $os_dir)
               
-              # Sửa lỗi: Di chuyển vào thư mục đúng
               artifact_content="$os_dir/dist-$os_name"
               
               if [ -d "$artifact_content" ]; then
@@ -178,7 +150,6 @@ jobs:
                 cp -a "$artifact_content"/* Equicord/dist/$os_name/
               else
                 echo "Artifact content not found: $artifact_content"
-                # Thử sao chép trực tiếp nếu không tìm thấy cấu trúc thư mục
                 mkdir -p Equicord/dist/$os_name
                 cp -a "$os_dir"/* Equicord/dist/$os_name/
               fi
@@ -197,7 +168,7 @@ jobs:
           git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           git add Equicord
           if ! git diff-index --quiet HEAD -- Equicord; then
-            git commit -m "🤖 Multi-platform build: Equicord artifacts $(date +'%Y-%m-%d %H:%M')"
+            git commit -m "🤖 feat(build/Equicord): Equicord artifacts $(date +'%Y-%m-%d %H:%M')"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           else
             echo "No changes in Equicord directory"

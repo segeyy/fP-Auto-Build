@@ -1,0 +1,4 @@
+# Add files here which is not unnecessary for publish.
+.github/workflows/test.yml
+src/test.txt
+src/test.ts
