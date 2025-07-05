@@ -9,7 +9,7 @@ class NeededStrings:
 
 def setup():
     print('Setup Equicord directory')
-    subprocess.run(['mkdir', '-p', f'{NeededStrings.equicord_path}'], shell = True)
+    subprocess.run(['mkdir', '-p', f'{NeededStrings.equicord_path}'])
 
     subprocess.run([
         'git', 'clone',
@@ -17,15 +17,15 @@ def setup():
         '--single-branch', '--branch', 'main',
         f'{NeededStrings.equicord_url}',
         f'{NeededStrings.equicord_temp}'
-    ], shell = True)
+    ])
 
     subprocess.run([
         'rsync', '-a', '--delete',
         '--exclude=\'.git\'', '--exclude=\'node_modules\'',
         f'{NeededStrings.equicord_temp}', f'{NeededStrings.equicord_path}'
-    ], shell = True)
+    ])
 
-    subprocess.run(['rm', '-rf', f'{NeededStrings.equicord_temp}'], shell = True)
+    subprocess.run(['rm', '-rf', f'{NeededStrings.equicord_temp}'])
 
     print('Update Equicord from upstream')
     subprocess.run([
@@ -34,13 +34,13 @@ def setup():
         '--single-branch', '--branch', 'main',
         f'{NeededStrings.equicord_url}',
         f'{NeededStrings.temp_upstream_path}'
-    ], shell = True)
+    ])
 
     subprocess.run([
         'rsync', '-a', '--delete',
         '--exclude=\'.git\'', '--exclude=\'node_modules\'',
         f'{NeededStrings.temp_upstream_path}', f'{NeededStrings.equicord_path}'
-    ], shell = True)
+    ])
 
     subprocess.run(['rm', '-rf', f'{NeededStrings.temp_upstream_path}'])
 
@@ -52,14 +52,14 @@ def setup():
             '-e', '\'/\\.exe/d\'',
             '-e', '\'/vencord_installer/d\'',
             '.gitignore'
-        ], shell = True, cwd = 'main-repo/Equicord')
+        ], cwd = 'main-repo/Equicord')
 
         #subprocess.run(['echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore'])
     else:
         print('No .gitignore file found')
 
     print('Install dependencies')
-    subprocess.run(['npm', 'i', '-g', 'pnpm'], shell = True, cwd = 'main-repo/Equicord')
+    subprocess.run(['npm', 'i', '-g', 'pnpm'], cwd = 'main-repo/Equicord')
     subprocess.run('pnpm i --no-frozen-lockfile', shell = True, cwd = 'main-repo/Equicord') # WARN: --no-frozen-lockfile is very important, do not erase from subproccess command.
 
 setup()
