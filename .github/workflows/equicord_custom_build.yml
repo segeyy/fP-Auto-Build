@@ -26,11 +26,11 @@ jobs:
           set-safe-directory: false
 
       - name: Equicord - Setup build
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+        uses: actions/checkout@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.13' 
-      - run: python3 main-repo/src/equicord_setup.py
+        run: python3 main-repo/src/equicord_setup.py
 
       - name: Update plugin
         run: |

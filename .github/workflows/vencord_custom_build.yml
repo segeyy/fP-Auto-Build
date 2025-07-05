@@ -146,11 +146,11 @@ jobs:
           pnpm i
 
       - name: Vencord - Apply fix CSP for fakeProfile
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+        uses: actions/checkout@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.13' 
-      - run: python3 main-repo/src/csp_fix.py
+        run: python3 main-repo/src/csp_fix.py
 
       - name: Build artifacts
         shell: bash
