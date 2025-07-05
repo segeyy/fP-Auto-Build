@@ -60,6 +60,6 @@ def setup():
 
     print('Install dependencies')
     subprocess.run(['npm', 'i', '-g', 'pnpm'], cwd = 'main-repo/Equicord')
-    subprocess.run(['pnpm i --no-frozen-lockfile'], cwd = 'main-repo/Equicord') # WARN: --no-frozen-lockfile is very important, do not erase from subproccess command.
+    subprocess.run('pnpm i --no-frozen-lockfile', cwd = 'main-repo/Equicord') # WARN: --no-frozen-lockfile is very important, do not erase from subproccess command.
 
 setup()
