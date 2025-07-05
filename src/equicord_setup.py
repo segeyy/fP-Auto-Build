@@ -44,20 +44,4 @@ def setup():
 
     subprocess.run(['rm', '-rf', f'{NeededStrings.temp_upstream_path}'])
 
-    print('Modify .gitignore for dist and executables')
-    if os.path.exists('main-repo/Equicord/.gitignore'):
-        subprocess.run(
-            'sed -i -e \'/dist/d\' -e \'/\\.exe/d\' -e \'/vencord_installer/d\' -e \'/equicord_installer/d\' .gitignore',
-            shell = True,
-            cwd = 'main-repo/Equicord'
-        )
-
-        subprocess.run('echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore', shell = True)
-    else:
-        print('No .gitignore file found')
-
-    print('Install dependencies')
-    subprocess.run(['npm', 'i', '-g', 'pnpm'], cwd = 'main-repo/Equicord')
-    subprocess.run('pnpm i --no-frozen-lockfile', shell = True, cwd = 'main-repo/Equicord') # WARN: --no-frozen-lockfile is very important, do not erase from subproccess command.
-
 setup()

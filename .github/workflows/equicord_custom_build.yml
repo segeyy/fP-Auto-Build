@@ -33,6 +33,22 @@ jobs:
       - name: Equicord - Setup build
         run: python3 main-repo/src/equicord_setup.py
 
+      - name: Modify .gitignore for dist and executables
+        run: |
+          cd main-repo/Equicord
+          if [ -f ".gitignore" ]; then
+            sed -i -e '/dist/d' -e '/\.exe/d' -e '/vencord_installer/d' -e '/equicord_installer/d' .gitignore
+            echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore
+          else
+            echo "No .gitignore file found"
+          fi
+
+      - name: Install dependencies
+        run: |
+          cd main-repo/Equicord
+          npm i -g pnpm
+          pnpm i --no-frozen-lockfile # WARN: --no-frozen-lockfile is very important, do not erase from command.
+
       - name: Update plugin
         run: |
           cd main-repo/Equicord/src/plugins
