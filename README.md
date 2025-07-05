@@ -25,6 +25,6 @@ cd fP-Auto-Build/
     - For custom desktop client such like as **Vesktop** or **Equibop** you need choose specific folder:
         - For **Vesktop** users needs `Vencord/` folder.
         - For **Equibop** users needs `Equibop/` folder.
-        1. After choosing open custom desktop client settings, ex. `Vesktop Settings`.
-        2. Scroll to the end and click `Open Developer Settings`.
-        3. Choose `dist/` folder from your build folder and reload desktop client fully. Enjoy.
+    1. After choosing open custom desktop client settings, ex. `Vesktop Settings`.
+    2. Scroll to the end and click `Open Developer Settings`.
+    3. Choose `dist/` folder from your build folder and reload desktop client fully. Enjoy.
