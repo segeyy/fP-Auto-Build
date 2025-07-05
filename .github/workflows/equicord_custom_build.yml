@@ -135,13 +135,13 @@ jobs:
 
       - name: Pushing dist directory
         run: | 
-          if [ -d "Equicord/dist" ]; then
+          if [ -d "main-repo/Equicord/dist" ]; then
             git config user.name "github-actions"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
             echo "Adding dist directory to git"
-            git add Equicord/dist
+            git add main-repo/Equicord/dist
 
             git commit -m "🤖 feat(build/Equicord): Dist directory adding"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
