@@ -103,6 +103,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.20'
+
       - name: Install platform-specific tools
         shell: bash
         run: |
@@ -117,7 +122,7 @@ jobs:
               echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bash_profile
               source ~/.bash_profile
             fi
-            brew install fpm || echo "fpm installation failed"
+            brew install pkg-config sdl2 || echo "SDL2 installation failed"
             
           elif [ "$RUNNER_OS" == "Linux" ]; then
             # Cài công cụ build cho Linux
@@ -137,7 +142,6 @@ jobs:
               libxi-dev \
               libxinerama-dev \
               libxrandr-dev \
-              golang \
               ruby-dev \
               build-essential \
               rpm
@@ -177,61 +181,82 @@ jobs:
           
           mv dist dist-${{ runner.os }}
 
-      #- name: Build custom installer
-      #  shell: bash
-      #  run: |
-      #    cd main-repo
-      #    
-      #    # Clone repo installer đã fork
-      #    git clone --depth 1 https://github.com/segeyy/Installer.git
-      #    cd Installer
-      #    
-      #    # Cài đặt dependencies
-      #    npm i -g pnpm
-      #    pnpm i
-      #    
-      #    # Build installer cho nền tảng tương ứng
-      #    if [ "$RUNNER_OS" == "Windows" ]; then
-      #      pnpm build:win
-      #      INSTALLER_PATH="dist/win-unpacked/VencordInstaller.exe"
-      #      OUTPUT_NAME="VencordInstaller-Custom.exe"
-      #      
-      #    elif [ "$RUNNER_OS" == "macOS" ]; then
-      #      pnpm build:mac
-      #      INSTALLER_PATH="dist/mac/VencordInstaller.app"
-      #      OUTPUT_NAME="VencordInstaller-Custom.app"
-      #      
-      #    elif [ "$RUNNER_OS" == "Linux" ]; then
-      #      # Build GUI và CLI cho Linux
-      #      go mod tidy
-      #      
-      #      # Build GUI cho X11
-      #      go build -o VencordInstaller-GUI-X11
-      #      
-      #      # Build GUI cho Wayland
-      #      go build --tags wayland -o VencordInstaller-GUI-Wayland
-      #      
-      #      # Build CLI
-      #      go build --tags cli -o VencordInstaller-CLI
-      #      
-      #      # Tạo thư mục dist để lưu các bản build
-      #      mkdir -p dist
-      #      mv VencordInstaller-* dist/
-      #      INSTALLER_PATH="dist"
-      #      OUTPUT_NAME="linux-installers"
-      #    fi
-      #    
-      #    # Tạo thư mục installers trong Vencord
-      #    mkdir -p ../Vencord/installers
-      #    
-      #    # Copy file installer
-      #    if [ -d "$INSTALLER_PATH" ]; then
-      #      cp -r "$INSTALLER_PATH"/* "../Vencord/installers/$OUTPUT_NAME"
-      #    else
-      #      cp -r "$INSTALLER_PATH" "../Vencord/installers/$OUTPUT_NAME"
-      #    fi
-      #    
-      #    echo "Installer built for $RUNNER_OS"
+      - name: Build custom installer
+        shell: bash
+        run: |
+          cd main-repo
+          
+          # Clone repo installer đã fork
+          git clone --depth 1 https://github.com/segeyy/Installer.git
+          cd Installer
+          
+          # Cài đặt dependencies Go
+          go mod tidy
+          
+          # Tạo thư mục đầu ra
+          mkdir -p build
+          
+          # Xác định ldflags chung
+          LDFLAGS="-s -w -X 'vencordinstaller/buildinfo.InstallerGitHash=$(git rev-parse --short HEAD)'"
+          
+          # Build cho tất cả nền tảng
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            # Build GUI
+            CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -v \
+              -tags static \
+              -ldflags "$LDFLAGS -H=windowsgui -extldflags=-static" \
+              -o build/VencordInstaller-GUI.exe
+            
+            # Build CLI
+            CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v \
+              -tags "static cli" \
+              -ldflags "$LDFLAGS -extldflags=-static" \
+              -o build/VencordInstaller-CLI.exe
+            
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            # Build GUI
+            CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 go build -v \
+              -tags static \
+              -ldflags "$LDFLAGS" \
+              -o build/VencordInstaller-GUI
+            
+            # Build CLI
+            CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -v \
+              -tags "static cli" \
+              -ldflags "$LDFLAGS" \
+              -o build/VencordInstaller-CLI
+            
+          elif [ "$RUNNER_OS" == "Linux" ]; then
+            # Build GUI cho X11
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v \
+              -tags static \
+              -ldflags "$LDFLAGS" \
+              -o build/VencordInstaller-GUI-X11
+            
+            # Build GUI cho Wayland
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v \
+              -tags "static wayland" \
+              -ldflags "$LDFLAGS" \
+              -o build/VencordInstaller-GUI-Wayland
+            
+            # Build CLI
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v \
+              -tags "static cli" \
+              -ldflags "$LDFLAGS" \
+              -o build/VencordInstaller-CLI
+          fi
+          
+          # Kiểm tra file đã build
+          echo "Built files:"
+          ls -l build/
+          
+          # Tạo thư mục installers trong Vencord
+          mkdir -p "../Vencord/installers/$RUNNER_OS"
+          
+          # Copy file build vào thư mục đích
+          cp build/* "../Vencord/installers/$RUNNER_OS/"
+          
+          echo "Installer built for $RUNNER_OS"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -284,7 +309,10 @@ jobs:
           mkdir -p Vencord/installers
           for artifact_dir in dist-artifacts/*; do
             if [ -d "$artifact_dir/Vencord/installers" ]; then
-              cp -a "$artifact_dir/Vencord/installers"/* Vencord/installers/
+              # Tạo thư mục OS tương ứng
+              os_name=$(basename "$artifact_dir" | sed 's/dist-//')
+              mkdir -p "Vencord/installers/$os_name"
+              cp -a "$artifact_dir/Vencord/installers/$os_name"/* "Vencord/installers/$os_name/"
             fi
           done
           
