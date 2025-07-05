@@ -337,16 +337,6 @@ jobs:
           echo "Installers:"
           ls -la Vencord/installers
 
-      - name: Builded Vencord commit
-        run: |
-          cd main-repo
-          git config user.name "github-actions"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
-
-          git add Vencord
-          git commit -m "🤖 feat(build/Vencord): Vencord build upload"
-
       - name: Commit Vencord changes
         run: |
           cd main-repo

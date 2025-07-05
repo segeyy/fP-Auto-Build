@@ -171,16 +171,6 @@ jobs:
           echo "Combined dist contents:"
           ls -la Equicord/dist
 
-      - name: Builded Equicord commit
-        run: |
-          cd main-repo
-          git config user.name "github-actions"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add Equicord
-          git commit -m "🤖 feat(build/Equicord): Equicord build upload"
-          git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
-
       - name: Commit Equicord changes
         run: |
           cd main-repo
