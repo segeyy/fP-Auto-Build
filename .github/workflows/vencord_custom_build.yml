@@ -161,11 +161,30 @@ jobs:
         run: |
           cd main-repo
           mkdir -p Vencord/dist
+          
+          # Sửa lỗi: Điều chỉnh đường dẫn artifact
           for os_dir in dist-artifacts/dist-*; do
-            os_name=$(basename $os_dir)
-            mkdir -p Vencord/dist/$os_name
-            cp -a $os_dir/* Vencord/dist/$os_name/
+            # Kiểm tra xem có file/thư mục nào không
+            if [ -d "$os_dir" ]; then
+              os_name=$(basename $os_dir)
+              
+              # Sửa lỗi: Di chuyển vào thư mục đúng
+              artifact_content="$os_dir/dist-$os_name"
+              
+              if [ -d "$artifact_content" ]; then
+                mkdir -p Vencord/dist/$os_name
+                cp -a "$artifact_content"/* Vencord/dist/$os_name/
+              else
+                echo "Artifact content not found: $artifact_content"
+                # Thử sao chép trực tiếp nếu không tìm thấy cấu trúc thư mục
+                mkdir -p Vencord/dist/$os_name
+                cp -a "$os_dir"/* Vencord/dist/$os_name/
+              fi
+            fi
           done
+          
+          # Kiểm tra nội dung
+          echo "Combined dist contents:"
           ls -la Vencord/dist
 
       - name: Commit Vencord changes
