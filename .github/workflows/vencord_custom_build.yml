@@ -101,13 +101,42 @@ jobs:
           if [ "$RUNNER_OS" == "Windows" ]; then
             # Cài công cụ build cho Windows
             choco install -y nsis python3 visualstudio2022-workload-vctools
+            
           elif [ "$RUNNER_OS" == "macOS" ]; then
             # Cài công cụ build cho macOS
-            brew install fpm || echo "Brew not available, skipping"
+            if ! command -v brew &> /dev/null; then
+              /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+              echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bash_profile
+              source ~/.bash_profile
+            fi
+            brew install fpm || echo "fpm installation failed"
+            
           elif [ "$RUNNER_OS" == "Linux" ]; then
             # Cài công cụ build cho Linux
             sudo apt-get update
-            sudo apt-get install -y fpm rpm
+            sudo apt-get install -y \
+              pkg-config \
+              libsdl2-dev \
+              libglx-dev \
+              libgl1-mesa-dev \
+              xorg-dev \
+              libwayland-dev \
+              libxkbcommon-dev \
+              wayland-protocols \
+              extra-cmake-modules \
+              libx11-dev \
+              libxcursor-dev \
+              libxi-dev \
+              libxinerama-dev \
+              libxrandr-dev \
+              golang \
+              ruby-dev \
+              build-essential \
+              rpm
+            
+            # Cài fpm qua gem
+            sudo gem install fpm
+            
           fi
 
       - name: Install dependencies
@@ -158,21 +187,41 @@ jobs:
             pnpm build:win
             INSTALLER_PATH="dist/win-unpacked/VencordInstaller.exe"
             OUTPUT_NAME="VencordInstaller-Custom.exe"
+            
           elif [ "$RUNNER_OS" == "macOS" ]; then
             pnpm build:mac
             INSTALLER_PATH="dist/mac/VencordInstaller.app"
             OUTPUT_NAME="VencordInstaller-Custom.app"
+            
           elif [ "$RUNNER_OS" == "Linux" ]; then
-            pnpm build:linux
-            INSTALLER_PATH="dist/VencordInstaller.AppImage"
-            OUTPUT_NAME="VencordInstaller-Custom.AppImage"
+            # Build GUI và CLI cho Linux
+            go mod tidy
+            
+            # Build GUI cho X11
+            go build -o VencordInstaller-GUI-X11
+            
+            # Build GUI cho Wayland
+            go build --tags wayland -o VencordInstaller-GUI-Wayland
+            
+            # Build CLI
+            go build --tags cli -o VencordInstaller-CLI
+            
+            # Tạo thư mục dist để lưu các bản build
+            mkdir -p dist
+            mv VencordInstaller-* dist/
+            INSTALLER_PATH="dist"
+            OUTPUT_NAME="linux-installers"
           fi
           
-          # Tạo thư mục installers
+          # Tạo thư mục installers trong Vencord
           mkdir -p ../Vencord/installers
           
           # Copy file installer
-          cp -r "$INSTALLER_PATH" "../Vencord/installers/$OUTPUT_NAME"
+          if [ -d "$INSTALLER_PATH" ]; then
+            cp -r "$INSTALLER_PATH"/* "../Vencord/installers/$OUTPUT_NAME"
+          else
+            cp -r "$INSTALLER_PATH" "../Vencord/installers/$OUTPUT_NAME"
+          fi
           
           echo "Installer built for $RUNNER_OS"
 
