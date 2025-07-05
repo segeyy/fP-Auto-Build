@@ -78,7 +78,7 @@ jobs:
         run: |
           cd main-repo/Equicord
           npm i -g pnpm
-          pnpm i
+          pnpm i --no-frozen-lockfile
 
       - name: Build artifacts
         shell: bash
