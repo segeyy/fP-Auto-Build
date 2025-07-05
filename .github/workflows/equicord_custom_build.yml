@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
+permissions:
+  contents: write-all
 
 jobs:
   equicord-setup:
@@ -122,8 +124,7 @@ jobs:
     needs: [equicord-setup, equicord-build]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.MY_PAT }}
           path: 'main-repo'
@@ -156,8 +157,9 @@ jobs:
               mkdir -p "Equicord/dist/$os_name"
               cp -a "$os_dir"/* "Equicord/dist/$os_name/"
               git add Equicord/dist/$os_name/
+
               echo "Pushing Equicord/dist/$os_name/"
-              git commit -m "🤖 feat(build/Equicord): Adding `dist/` folder"
+              git commit -am "🤖 feat(build/Equicord): Adding `dist/` folder"
               git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
             fi
           done
