@@ -54,7 +54,7 @@ def setup():
             '.gitignore'
         ], cwd = 'main-repo/Equicord')
 
-        subprocess.run(['echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore'])
+        #subprocess.run(['echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore'])
     else:
         print('No .gitignore file found')
 
