@@ -168,21 +168,12 @@ jobs:
         run: |
           cd main-repo
           mkdir -p Equicord/dist
-          
+
           for os_dir in dist-artifacts/dist-*; do
             if [ -d "$os_dir" ]; then
-              os_name=$(basename $os_dir)
-              
-              artifact_content="$os_dir/dist-$os_name"
-              
-              if [ -d "$artifact_content" ]; then
-                mkdir -p Equicord/dist/$os_name
-                cp -a "$artifact_content"/* Equicord/dist/$os_name/
-              else
-                echo "Artifact content not found: $artifact_content"
-                mkdir -p Equicord/dist/$os_name
-                cp -a "$os_dir"/* Equicord/dist/$os_name/
-              fi
+              os_name=$(basename "$os_dir")
+              mkdir -p "Equicord/dist/$os_name"
+              cp -a "$os_dir"/* "Equicord/dist/$os_name/"
             fi
           done
           
