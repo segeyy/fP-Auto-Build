@@ -85,7 +85,14 @@ jobs:
         run: |
           cd main-repo/Vencord
           # Tạo hash để đồng bộ giữa các job
-          echo "hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "hash=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Upload Vencord artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vencord-setup
+          path: main-repo/Vencord
+          retention-days: 1
 
   build:
     needs: setup
@@ -94,36 +101,22 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout main repository
-        uses: actions/checkout@v4
+      - name: Download Vencord artifact
+        uses: actions/download-artifact@v4
         with:
-          token: ${{ secrets.MY_PAT }}
-          path: 'main-repo'
-          fetch-depth: 0
-          submodules: false
-          set-safe-directory: false
-
-      - name: Restore Vencord directory
-        run: |
-          # Sử dụng rsync để sao chép nội dung từ job setup
-          mkdir -p main-repo
-          rsync -a --delete ${{ github.workspace }}/../setup/main-repo/ main-repo/
-          
-          # Kiểm tra hash để đảm bảo đồng bộ
-          cd main-repo/Vencord
-          current_hash=$(git rev-parse HEAD)
-          expected_hash="${{ needs.setup.outputs.ven_hash }}"
-          if [ "$current_hash" != "$expected_hash" ]; then
-            echo "Error: Vencord hash mismatch!"
-            echo "Expected: $expected_hash"
-            echo "Actual: $current_hash"
-            exit 1
-          fi
+          name: vencord-setup
+          path: main-repo/Vencord
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Install dependencies
+        run: |
+          cd main-repo/Vencord
+          npm i -g pnpm
+          pnpm i
 
       - name: Build artifacts
         run: |
@@ -149,7 +142,7 @@ jobs:
           # Đổi tên thư mục dist theo nền tảng
           mv dist dist-${{ runner.os }}
 
-      - name: Upload artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ runner.os }}
@@ -169,10 +162,16 @@ jobs:
           submodules: false
           set-safe-directory: false
 
-      - name: Download all artifacts
+      - name: Download Vencord artifact
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          name: vencord-setup
+          path: main-repo/Vencord
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-artifacts
 
       - name: Combine artifacts
         run: |
@@ -182,7 +181,7 @@ jobs:
           mkdir -p Vencord/dist
           
           # Sao chép tất cả artifact vào thư mục dist
-          for os_dir in ../artifacts/dist-*; do
+          for os_dir in dist-artifacts/dist-*; do
             os_name=$(basename $os_dir)
             mkdir -p Vencord/dist/$os_name
             cp -a $os_dir/* Vencord/dist/$os_name/
