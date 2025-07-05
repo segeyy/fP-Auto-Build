@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
-  push:
-    paths:
-      - Equicord/dist/**
 
 jobs:
   equicord-setup:
@@ -164,14 +161,9 @@ jobs:
             if [ -d "$os_dir" ]; then
               os_name=$(basename "$os_dir")
               mkdir -p "Equicord/dist/$os_name"
-              cp -r "$os_dir"/* "Equicord/dist/$os_name/"
-              git add "Equicord/dist/$os_name"/*
+              cp -a "$os_dir"/* "Equicord/dist/$os_name/"
             fi
           done
-
-          echo "Pushing dist folders"
-          git commit -am "🤖 feat(build/Equicord): Adding `Equicord/dist/` data"
-          git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
       - name: Commit Equicord changes
         run: |
@@ -187,3 +179,6 @@ jobs:
           else
             echo "No changes in Equicord directory"
           fi
+
+      - name: GH Release
+        uses: softprops/action-gh-release@v2.3.2
