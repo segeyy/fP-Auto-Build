@@ -164,10 +164,6 @@ jobs:
         with:
           path: dist-artifacts
 
-      - name: Combine artifacts
-        run: |
-          cd main-repo
-
       - name: Combine artifacts and commit Equicord changes
         run: |
           cd main-repo
@@ -185,13 +181,15 @@ jobs:
             fi
           done
           
-          # Kiểm tra nội dung
           echo "Combined dist contents:"
           ls -la Equicord/dist
 
           if [ -d "Equicord/dist" ]; then
             echo "Adding dist directory to git"
             git add Equicord/dist
+
+            git commit -m "🤖 feat(build/Equicord): Dist directory adding"
+            git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           else
             echo "WARNING: dist directory not found!"
             ls -la Equicord
