@@ -6,11 +6,10 @@ on:
   workflow_dispatch: # Cho phép kích hoạt thủ công
 
 jobs:
-  auto-update:
+  setup:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
+    outputs:
+      ven_hash: ${{ steps.hash.outputs.hash }}
     steps:
       - name: Install required tools
         run: |
@@ -50,10 +49,20 @@ jobs:
           # Xóa thư mục tạm
           rm -rf temp-upstream
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      - name: Modify .gitignore for dist and executables
+        run: |
+          cd main-repo/Vencord
+          
+          # Loại bỏ các pattern không mong muốn khỏi .gitignore
+          if [ -f ".gitignore" ]; then
+            # Xóa các dòng liên quan đến dist, exe, vencord_installer
+            sed -i -e '/dist/d' -e '/\.exe/d' -e '/vencord_installer/d' .gitignore
+            
+            # Thêm comment để giải thích
+            echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore
+          else
+            echo "No .gitignore file found"
+          fi
 
       - name: Install dependencies
         run: |
@@ -71,20 +80,50 @@ jobs:
           rm -rf fakeProfile/.git
           find fakeProfile -type f -exec dos2unix {} +
 
-      - name: Modify .gitignore for dist and executables
+      - name: Generate Vencord hash
+        id: hash
         run: |
           cd main-repo/Vencord
+          # Tạo hash để đồng bộ giữa các job
+          echo "hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+  build:
+    needs: setup
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MY_PAT }}
+          path: 'main-repo'
+          fetch-depth: 0
+          submodules: false
+          set-safe-directory: false
+
+      - name: Restore Vencord directory
+        run: |
+          # Sử dụng rsync để sao chép nội dung từ job setup
+          mkdir -p main-repo
+          rsync -a --delete ${{ github.workspace }}/../setup/main-repo/ main-repo/
           
-          # Loại bỏ các pattern không mong muốn khỏi .gitignore
-          if [ -f ".gitignore" ]; then
-            # Xóa các dòng liên quan đến dist, exe, vencord_installer
-            sed -i -e '/dist/d' -e '/\.exe/d' -e '/vencord_installer/d' .gitignore
-            
-            # Thêm comment để giải thích
-            echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore
-          else
-            echo "No .gitignore file found"
+          # Kiểm tra hash để đảm bảo đồng bộ
+          cd main-repo/Vencord
+          current_hash=$(git rev-parse HEAD)
+          expected_hash="${{ needs.setup.outputs.ven_hash }}"
+          if [ "$current_hash" != "$expected_hash" ]; then
+            echo "Error: Vencord hash mismatch!"
+            echo "Expected: $expected_hash"
+            echo "Actual: $current_hash"
+            exit 1
           fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
       - name: Build artifacts
         run: |
@@ -107,9 +146,51 @@ jobs:
           # Xóa git repository tạm thời sau khi build
           rm -rf .git
           
-          # Kiểm tra thư mục dist
-          echo "Dist directory contents:"
-          ls -la dist
+          # Đổi tên thư mục dist theo nền tảng
+          mv dist dist-${{ runner.os }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ runner.os }}
+          path: main-repo/Vencord/dist-*
+          retention-days: 1
+
+  combine-and-commit:
+    needs: [setup, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MY_PAT }}
+          path: 'main-repo'
+          fetch-depth: 0
+          submodules: false
+          set-safe-directory: false
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Combine artifacts
+        run: |
+          cd main-repo
+          
+          # Tạo thư mục dist tổng hợp
+          mkdir -p Vencord/dist
+          
+          # Sao chép tất cả artifact vào thư mục dist
+          for os_dir in ../artifacts/dist-*; do
+            os_name=$(basename $os_dir)
+            mkdir -p Vencord/dist/$os_name
+            cp -a $os_dir/* Vencord/dist/$os_name/
+          done
+          
+          # Kiểm tra nội dung
+          echo "Combined dist contents:"
+          ls -la Vencord/dist
 
       - name: Commit Vencord changes
         run: |
@@ -122,20 +203,11 @@ jobs:
           # Pull các thay đổi mới nhất từ remote
           git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           
-          # Đảm bảo thư mục dist được thêm vào
-          if [ -d "Vencord/dist" ]; then
-            echo "Adding dist directory to git"
-            git add Vencord/dist
-          else
-            echo "WARNING: dist directory not found!"
-            ls -la Vencord
-          fi
-          
-          # Thêm toàn bộ thư mục Vencord (bao gồm cả dist)
+          # Thêm toàn bộ thư mục Vencord
           git add Vencord
           
           if ! git diff-index --quiet HEAD -- Vencord; then
-            git commit -m "🤖 Auto-update: Vencord build artifacts $(date +'%Y-%m-%d %H:%M')"
+            git commit -m "🤖 Multi-platform build: Vencord artifacts $(date +'%Y-%m-%d %H:%M')"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           else
             echo "No changes in Vencord directory"
