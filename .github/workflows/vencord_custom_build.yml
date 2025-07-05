@@ -182,23 +182,6 @@ jobs:
           
           mv dist dist-${{ runner.os }}
 
-      - name: Pushing dist directory
-        run: | 
-          if [ -d "Vencord/dist" ]; then
-            git config user.name "github-actions"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
-
-            echo "Adding dist directory to git"
-            git add Vencord/dist
-
-            git commit -m "🤖 feat(build/Vencord): Dist directory adding"
-            git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
-          else
-            echo "WARNING: dist directory not found!"
-            ls -la Vencord
-          fi
-
       - name: Build custom installer
         shell: bash
         run: |
@@ -328,6 +311,7 @@ jobs:
               os_name=$(basename "$os_dir")
               mkdir -p "Vencord/dist/$os_name"
               cp -a "$os_dir"/* "Vencord/dist/$os_name/"
+              git add Equicord/dist/$os_name/
             fi
           done
           

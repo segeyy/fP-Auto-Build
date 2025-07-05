@@ -131,6 +131,8 @@ jobs:
             rm -rf .git
           fi
 
+          mv dist dist-${{ runner.os }}
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
