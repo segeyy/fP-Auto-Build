@@ -136,8 +136,14 @@ jobs:
           pnpm build
           pnpm buildWeb
           
-          # Xóa git repository tạm thời sau khi build
-          rm -rf .git
+          # SỬA LỖI: Xóa git repository tạm thời (đa nền tảng)
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            # Lệnh cho Windows
+            cmd.exe /c "rmdir /s /q .git"
+          else
+            # Lệnh cho Linux/macOS
+            rm -rf .git
+          fi
           
           # Đổi tên thư mục dist theo nền tảng
           mv dist dist-${{ runner.os }}
