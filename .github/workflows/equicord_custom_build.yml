@@ -144,6 +144,15 @@ jobs:
     needs: [equicord-setup, equicord-build]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MY_PAT }}
+          path: 'main-repo'
+          fetch-depth: 0
+          submodules: false
+          set-safe-directory: false
+
       - name: Download Equicord artifact
         uses: actions/download-artifact@v4
         with:
@@ -157,6 +166,7 @@ jobs:
 
       - name: Combine artifacts and commit Equicord changes
         run: |
+          cd main-repo
           git config user.name "github-actions"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
