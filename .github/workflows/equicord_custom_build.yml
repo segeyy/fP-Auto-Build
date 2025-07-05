@@ -180,5 +180,13 @@ jobs:
             echo "No changes in Equicord directory"
           fi
 
-      - name: GH Release
-        uses: softprops/action-gh-release@v2.3.2
+      #- name: GH Release
+      #  uses: softprops/action-gh-release@v2.3.2
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+        run: >-
+          gh release create ${{ github.ref_name }}
+          "release-build.zip"
+          --generate-notes
+          --title "Version ${{ github.ref_name }} (or some other name)"
