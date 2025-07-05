@@ -11,6 +11,11 @@ jobs:
     outputs:
       ven_hash: ${{ steps.hash.outputs.hash }}
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
       - name: Install required tools
         run: |
           sudo apt-get update
@@ -64,6 +69,9 @@ jobs:
           rm -rf fakeProfile/.git
           find fakeProfile -type f -exec dos2unix {} +
 
+      - name: Vencord - Apply fix CSP for fakeProfile
+        run: python3 main-repo/src/csp_fix.py
+
       - name: Generate Vencord hash
         id: hash
         run: |
@@ -84,10 +92,6 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13' 
       - name: Download Vencord artifact
         uses: actions/download-artifact@v4
         with:
@@ -142,9 +146,6 @@ jobs:
             sudo gem install fpm
             
           fi
-
-      - name: Vencord - Apply fix CSP for fakeProfile
-        run: python3 main-repo/src/csp_fix.py
 
       - name: Install dependencies
         run: |
