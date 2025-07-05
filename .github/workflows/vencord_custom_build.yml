@@ -4,12 +4,17 @@ on:
   schedule:
     - cron: '0 * * * *' # Chạy mỗi giờ
   workflow_dispatch: # Cho phép kích hoạt thủ công
+  push:
+    tags:
+      - 'v*.*.*'
 
 jobs:
   vencord-setup:
     runs-on: ubuntu-latest
     outputs:
       ven_hash: ${{ steps.hash.outputs.hash }}
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -91,6 +96,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     steps:
       - name: Download Vencord artifact
         uses: actions/download-artifact@v4
@@ -274,6 +281,8 @@ jobs:
   combine-and-commit:
     needs: [vencord-setup, vencord-build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout main repository
         uses: actions/checkout@v4
@@ -295,17 +304,11 @@ jobs:
         with:
           path: dist-artifacts
 
-      - name: Combine artifacts and commit Vencord changes
+      - name: Combine artifacts
         run: |
           cd main-repo
-          git config user.name "github-actions"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
-
-          # Tạo thư mục dist tổng hợp
           mkdir -p Vencord/dist
           
-          # Sao chép các bản build từ tất cả nền tảng
           for os_dir in dist-artifacts/dist-*; do
             if [ -d "$os_dir" ]; then
               os_name=$(basename "$os_dir")
@@ -314,23 +317,29 @@ jobs:
               git add Equicord/dist/$os_name/
             fi
           done
-          
-          # Tạo thư mục installers và sao chép tất cả installer
+
           mkdir -p Vencord/installers
+
           for artifact_dir in dist-artifacts/*; do
             if [ -d "$artifact_dir/Vencord/installers" ]; then
-              # Tạo thư mục OS tương ứng
               os_name=$(basename "$artifact_dir" | sed 's/dist-//')
               mkdir -p "Vencord/installers/$os_name"
               cp -a "$artifact_dir/Vencord/installers/$os_name"/* "Vencord/installers/$os_name/"
             fi
           done
           
-          # Kiểm tra nội dung
           echo "Combined dist contents:"
           ls -la Vencord/dist
+
           echo "Installers:"
           ls -la Vencord/installers
+
+      - name: Commit Vencord changes
+        run: |
+          cd main-repo
+          git config user.name "github-actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
           git add Vencord
           if ! git diff-index --quiet HEAD -- Vencord; then
@@ -339,3 +348,14 @@ jobs:
           else
             echo "No changes in Vencord directory"
           fi
+
+      - name: Upload Release
+        if: ${{ github.ref_name == 'main' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create "$tag" \
+            --repo="$GITHUB_REPOSITORY" \
+            --title="${GITHUB_REPOSITORY#*/}-${tag#v}" \
+            --generate-notes

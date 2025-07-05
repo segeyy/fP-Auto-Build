@@ -157,9 +157,6 @@ jobs:
           cd main-repo
           mkdir -p Equicord/dist
 
-          git config user.name "github-actions"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           for os_dir in dist-artifacts/dist-*; do
             if [ -d "$os_dir" ]; then
               os_name=$(basename "$os_dir")
@@ -167,6 +164,9 @@ jobs:
               cp -a "$os_dir"/* "Equicord/dist/$os_name/"
             fi
           done
+
+          echo "Combined dist contents:"
+          ls -la Equicord/dist
 
       - name: Commit Equicord changes
         run: |
@@ -191,5 +191,5 @@ jobs:
         run: |
           gh release create "$tag" \
             --repo="$GITHUB_REPOSITORY" \
-            --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+            --title="${GITHUB_REPOSITORY#*/}-${tag#v}:" \
             --generate-notes
