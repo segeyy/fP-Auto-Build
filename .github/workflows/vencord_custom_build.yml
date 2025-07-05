@@ -1,0 +1,114 @@
+name: Vencord Auto-Updater
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Chạy mỗi giờ
+  workflow_dispatch: # Cho phép kích hoạt thủ công
+
+jobs:
+  auto-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Install required tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dos2unix rsync
+
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MY_PAT }}
+          path: 'main-repo'
+          fetch-depth: 0
+          submodules: false
+          set-safe-directory: false
+
+      - name: Setup Vencord directory
+        run: |
+          mkdir -p main-repo/Vencord
+          
+          # Clone Vencord vào thư mục tạm thời
+          git clone --depth 1 --single-branch --branch main https://github.com/Vendicated/Vencord.git temp-vencord
+          
+          # Sao chép nội dung (không bao gồm .git) vào thư mục Vencord
+          rsync -a --delete --exclude='.git' --exclude='node_modules' temp-vencord/ main-repo/Vencord/
+          
+          # Xóa thư mục tạm
+          rm -rf temp-vencord
+
+      - name: Update Vencord from upstream
+        run: |
+          # Clone upstream mới nhất
+          git clone --depth 1 --single-branch --branch main https://github.com/Vendicated/Vencord.git temp-upstream
+          
+          # Sao chép nội dung mới vào Vencord
+          rsync -a --delete --exclude='.git' --exclude='node_modules' temp-upstream/ main-repo/Vencord/
+          
+          # Xóa thư mục tạm
+          rm -rf temp-upstream
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          cd main-repo/Vencord
+          npm i -g pnpm
+          pnpm i
+
+      - name: Update plugin
+        run: |
+          cd main-repo/Vencord/src/plugins
+          if [ -d "fakeProfile" ]; then
+            rm -rf fakeProfile
+          fi
+          git clone --depth 1 https://github.com/gujarathisampath/fakeProfile.git
+          rm -rf fakeProfile/.git
+          find fakeProfile -type f -exec dos2unix {} +
+
+      - name: Build artifacts
+        run: |
+          cd main-repo/Vencord
+          
+          # Tạo git repository tạm thời để build
+          git init -q
+          git config user.name "github-actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -q -m "Temporary commit for build"
+          
+          # Thêm remote origin để plugin git-remote-plugin hoạt động
+          git remote add origin https://github.com/Vendicated/Vencord.git
+          
+          # Thực hiện build
+          pnpm build
+          pnpm buildWeb
+          
+          # Xóa git repository tạm thời sau khi build
+          rm -rf .git
+
+      - name: Commit Vencord changes
+        run: |
+          cd main-repo
+          
+          # Cấu hình git
+          git config user.name "github-actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Pull các thay đổi mới nhất từ remote
+          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+          
+          # Thêm thư mục Vencord
+          git add Vencord
+          
+          if ! git diff-index --quiet HEAD -- Vencord; then
+            git commit -m "🤖 Auto-update: Vencord build artifacts $(date +'%Y-%m-%d %H:%M')"
+            git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+          else
+            echo "No changes in Vencord directory"
+          fi
