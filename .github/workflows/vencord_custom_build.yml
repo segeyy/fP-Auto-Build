@@ -71,16 +71,17 @@ jobs:
           rm -rf fakeProfile/.git
           find fakeProfile -type f -exec dos2unix {} +
 
-      - name: Modify .gitignore for dist
+      - name: Modify .gitignore for dist and executables
         run: |
           cd main-repo/Vencord
           
-          # Loại bỏ dist khỏi .gitignore
+          # Loại bỏ các pattern không mong muốn khỏi .gitignore
           if [ -f ".gitignore" ]; then
-            # Xóa tất cả các dòng liên quan đến dist
-            sed -i '/dist/d' .gitignore
+            # Xóa các dòng liên quan đến dist, exe, vencord_installer
+            sed -i -e '/dist/d' -e '/\.exe/d' -e '/vencord_installer/d' .gitignore
+            
             # Thêm comment để giải thích
-            echo "# Dist directory is intentionally tracked in this fork" >> .gitignore
+            echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore
           else
             echo "No .gitignore file found"
           fi
