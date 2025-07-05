@@ -28,37 +28,21 @@ jobs:
       - name: Setup Vencord directory
         run: |
           mkdir -p main-repo/Vencord
-          
-          # Clone Vencord vào thư mục tạm thời
           git clone --depth 1 --single-branch --branch main https://github.com/Vendicated/Vencord.git temp-vencord
-          
-          # Sao chép nội dung (không bao gồm .git) vào thư mục Vencord
           rsync -a --delete --exclude='.git' --exclude='node_modules' temp-vencord/ main-repo/Vencord/
-          
-          # Xóa thư mục tạm
           rm -rf temp-vencord
 
       - name: Update Vencord from upstream
         run: |
-          # Clone upstream mới nhất
           git clone --depth 1 --single-branch --branch main https://github.com/Vendicated/Vencord.git temp-upstream
-          
-          # Sao chép nội dung mới vào Vencord
           rsync -a --delete --exclude='.git' --exclude='node_modules' temp-upstream/ main-repo/Vencord/
-          
-          # Xóa thư mục tạm
           rm -rf temp-upstream
 
       - name: Modify .gitignore for dist and executables
         run: |
           cd main-repo/Vencord
-          
-          # Loại bỏ các pattern không mong muốn khỏi .gitignore
           if [ -f ".gitignore" ]; then
-            # Xóa các dòng liên quan đến dist, exe, vencord_installer
             sed -i -e '/dist/d' -e '/\.exe/d' -e '/vencord_installer/d' .gitignore
-            
-            # Thêm comment để giải thích
             echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore
           else
             echo "No .gitignore file found"
@@ -84,7 +68,6 @@ jobs:
         id: hash
         run: |
           cd main-repo/Vencord
-          # Tạo hash để đồng bộ giữa các job
           echo "hash=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Upload Vencord artifact
@@ -119,33 +102,28 @@ jobs:
           pnpm i
 
       - name: Build artifacts
+        shell: bash
         run: |
           cd main-repo/Vencord
           
-          # Tạo git repository tạm thời để build
           git init -q
           git config user.name "github-actions"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -q -m "Temporary commit for build"
           
-          # Thêm remote origin để plugin git-remote-plugin hoạt động
           git remote add origin https://github.com/Vendicated/Vencord.git
           
-          # Thực hiện build
           pnpm build
           pnpm buildWeb
           
-          # SỬA LỖI: Xóa git repository tạm thời (đa nền tảng)
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            # Lệnh cho Windows
+          # Xóa git repository tạm thời
+          if [ "$RUNNER_OS" == "Windows" ]; then
             cmd.exe /c "rmdir /s /q .git"
           else
-            # Lệnh cho Linux/macOS
             rm -rf .git
           fi
           
-          # Đổi tên thư mục dist theo nền tảng
           mv dist dist-${{ runner.os }}
 
       - name: Upload build artifacts
@@ -182,35 +160,21 @@ jobs:
       - name: Combine artifacts
         run: |
           cd main-repo
-          
-          # Tạo thư mục dist tổng hợp
           mkdir -p Vencord/dist
-          
-          # Sao chép tất cả artifact vào thư mục dist
           for os_dir in dist-artifacts/dist-*; do
             os_name=$(basename $os_dir)
             mkdir -p Vencord/dist/$os_name
             cp -a $os_dir/* Vencord/dist/$os_name/
           done
-          
-          # Kiểm tra nội dung
-          echo "Combined dist contents:"
           ls -la Vencord/dist
 
       - name: Commit Vencord changes
         run: |
           cd main-repo
-          
-          # Cấu hình git
           git config user.name "github-actions"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          
-          # Pull các thay đổi mới nhất từ remote
           git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
-          
-          # Thêm toàn bộ thư mục Vencord
           git add Vencord
-          
           if ! git diff-index --quiet HEAD -- Vencord; then
             git commit -m "🤖 Multi-platform build: Vencord artifacts $(date +'%Y-%m-%d %H:%M')"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
