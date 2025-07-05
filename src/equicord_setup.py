@@ -47,7 +47,7 @@ def setup():
         subprocess.run([
             'sed', '-i',
             '-e', '\'/dist/d\'',
-            '-e', '\'/\.exe/d\'',
+            '-e', '\'/\\.exe/d\'',
             '-e', '\'/vencord_installer/d\'',
             '.gitignore'
         ], cwd = 'main-repo/Equicord')
