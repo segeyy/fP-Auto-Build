@@ -344,13 +344,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
-          if [ -d "Vencord/" ]; then
-            echo "Vencord build folder in repository is already exists, passing."
-          else
-            git add Vencord
-            git commit -m "🤖 feat(build/Vencord): Vencord build upload"
-            git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
-          fi
+          git add Vencord
+          git commit -m "🤖 feat(build/Vencord): Vencord build upload"
+          git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
       - name: Commit Vencord changes
         run: |
