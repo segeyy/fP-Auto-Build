@@ -21,17 +21,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y dos2unix rsync
 
-      - name: Checkout main repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.MY_PAT }}
-          path: 'main-repo'
-          fetch-depth: 0
-          submodules: false
-          set-safe-directory: false
+      #- name: Checkout main repository
+      #  uses: actions/checkout@v4
+      #  with:
+      #    token: ${{ secrets.MY_PAT }}
+      #    path: 'main-repo'
+      #    fetch-depth: 0
+      #    submodules: false
+      #    set-safe-directory: false
 
       - name: Setup Equicord build
-        run: python3 main-repo/src/equicord_setup.py
+        run: python3 src/equicord_setup.py
 
       #- name: Setup Equicord directory
       #  run: |
@@ -48,7 +48,7 @@ jobs:
 
       - name: Modify .gitignore for dist and executables
         run: |
-          cd main-repo/Equicord
+          cd Equicord
           if [ -f ".gitignore" ]; then
             sed -i -e '/dist/d' -e '/\.exe/d' -e '/equicord_installer/d' .gitignore
             echo "# Dist and executable files are intentionally tracked in this fork" >> .gitignore
@@ -58,13 +58,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd main-repo/Equicord
+          cd Equicord
           npm i -g pnpm
           pnpm i --no-frozen-lockfile # WARN: --no-frozen-lockfile is very important, do not erase from command.
 
       - name: Update plugin
         run: |
-          cd main-repo/Equicord/src/plugins
+          cd Equicord/src/plugins
           if [ -d "fakeProfile" ]; then
             rm -rf fakeProfile
           fi
@@ -75,14 +75,14 @@ jobs:
       - name: Generate Equicord hash
         id: hash
         run: |
-          cd main-repo/Equicord
+          cd Equicord
           echo "hash=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Upload Equicord artifact
         uses: actions/upload-artifact@v4
         with:
           name: equicord-setup
-          path: main-repo/Equicord
+          path: Equicord
           retention-days: 1
 
   equicord-build:
@@ -96,7 +96,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: equicord-setup
-          path: main-repo/Equicord
+          path: Equicord
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -105,14 +105,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd main-repo/Equicord
+          cd Equicord
           npm i -g pnpm
           pnpm i --no-frozen-lockfile
 
       - name: Build artifacts
         shell: bash
         run: |
-          cd main-repo/Equicord
+          cd Equicord
           
           git init -q
           git config user.name "github-actions"
@@ -135,13 +135,13 @@ jobs:
 
       - name: Pushing dist directory
         run: | 
-          if [ -d "main-repo/Equicord/dist" ]; then
+          if [ -d "Equicord/dist" ]; then
             git config user.name "github-actions"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
             echo "Adding dist directory to git"
-            git add main-repo/Equicord/dist
+            git add Equicord/dist
 
             git commit -m "🤖 feat(build/Equicord): Dist directory adding"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
@@ -154,27 +154,18 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ runner.os }}
-          path: main-repo/Equicord/dist-*
+          path: Equicord/dist-*
           retention-days: 1
 
   combine-and-commit:
     needs: [equicord-setup, equicord-build]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.MY_PAT }}
-          path: 'main-repo'
-          fetch-depth: 0
-          submodules: false
-          set-safe-directory: false
-
       - name: Download Equicord artifact
         uses: actions/download-artifact@v4
         with:
           name: equicord-setup
-          path: main-repo/Equicord
+          path: Equicord
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4

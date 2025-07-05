@@ -2,10 +2,10 @@ import subprocess
 import os
 
 class NeededStrings:
-    temp_upstream_path: str = 'main-repo/temp-upstream/'
+    temp_upstream_path: str = 'temp-upstream/'
     equicord_url: str = 'https://github.com/Equicord/Equicord.git'
-    equicord_path: str = 'main-repo/Equicord/'
-    equicord_temp: str = 'main-repo/temp-equicord/'
+    equicord_path: str = 'Equicord/'
+    equicord_temp: str = 'temp-equicord/'
 
 def setup():
     print('Setup Equicord directory')
