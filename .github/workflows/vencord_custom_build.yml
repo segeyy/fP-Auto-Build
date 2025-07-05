@@ -292,6 +292,9 @@ jobs:
           fetch-depth: 0
           submodules: false
           set-safe-directory: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
 
       - name: Download Vencord artifact
         uses: actions/download-artifact@v4
@@ -349,11 +352,14 @@ jobs:
             echo "No changes in Vencord directory"
           fi
 
+      - name: Generate tag Release
+        run: python3 main-repo/src/tag_generator.py
+
       - name: Upload Release
         if: ${{ github.ref_name == 'main' }}
         env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT }}
-          tag: ${{ github.ref_name }}
+          tag: ${{ env.RELEASE_VERSION }}
         run: |
           gh release create "$tag" \
             --repo="$GITHUB_REPOSITORY" \
