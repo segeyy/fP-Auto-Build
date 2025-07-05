@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
+  push:
+    paths:
+      - Equicord/dist/**
 
 jobs:
   equicord-setup:
@@ -161,7 +164,7 @@ jobs:
             if [ -d "$os_dir" ]; then
               os_name=$(basename "$os_dir")
               mkdir -p "Equicord/dist/$os_name"
-              cp -a "$os_dir"/* "Equicord/dist/$os_name/"
+              cp -r "$os_dir"/* "Equicord/dist/$os_name/"
               git add "Equicord/dist/$os_name"/*
             fi
           done
