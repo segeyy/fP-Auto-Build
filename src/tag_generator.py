@@ -10,6 +10,6 @@ for i in range(8):
     random_letters += random_letter
 
 subprocess.run(
-    f'echo "RELEASE_VERSION=\'{random_letters}\'" >> $GITHUB_ENV',
+    f'echo "RELEASE_VERSION={random_letters}" >> $GITHUB_ENV',
     shell = True
 )
