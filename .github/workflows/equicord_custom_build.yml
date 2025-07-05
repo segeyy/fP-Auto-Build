@@ -4,14 +4,16 @@ on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
-permissions:
-  contents: write
 
 jobs:
   equicord-setup:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     outputs:
       ven_hash: ${{ steps.hash.outputs.hash }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -71,6 +73,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     steps:
       - name: Download Equicord artifact
         uses: actions/download-artifact@v4
@@ -123,6 +127,8 @@ jobs:
   combine-and-commit:
     needs: [equicord-setup, equicord-build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -156,12 +162,12 @@ jobs:
               os_name=$(basename "$os_dir")
               mkdir -p "Equicord/dist/$os_name"
               cp -a "$os_dir"/* "Equicord/dist/$os_name/"
-              git add Equicord/dist/*
+              git add "Equicord/dist/$os_name"/*
             fi
           done
 
           echo "Pushing dist folders"
-          git commit -am "🤖 feat(build/Equicord): Adding `Equicord/dist/` folder"
+          git commit -am "🤖 feat(build/Equicord): Adding `Equicord/dist/` data"
           git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
       - name: Commit Equicord changes
