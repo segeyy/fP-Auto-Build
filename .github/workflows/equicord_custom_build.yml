@@ -112,7 +112,7 @@ jobs:
           retention-days: 1
 
   combine-and-commit:
-    needs: [equicord-setup, equicord-build]
+    needs: [equicord-build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main repository
