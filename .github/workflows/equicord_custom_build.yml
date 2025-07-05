@@ -21,30 +21,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y dos2unix rsync
 
-      #- name: Checkout main repository
-      #  uses: actions/checkout@v4
-      #  with:
-      #    token: ${{ secrets.MY_PAT }}
-      #    path: 'main-repo'
-      #    fetch-depth: 0
-      #    submodules: false
-      #    set-safe-directory: false
-
       - name: Setup Equicord build
         run: python3 src/equicord_setup.py
-
-      #- name: Setup Equicord directory
-      #  run: |
-      #    mkdir -p main-repo/Equicord
-      #    git clone --depth 1 --single-branch --branch main https://github.com/Equicord/Equicord.git temp-equicord
-      #    rsync -a --delete --exclude='.git' --exclude='node_modules' temp-equicord/ main-repo/Equicord/
-      #    rm -rf temp-equicord
-      #
-      #- name: Update Equicord from upstream
-      #  run: |
-      #    git clone --depth 1 --single-branch --branch main https://github.com/Equicord/Equicord.git temp-upstream
-      #    rsync -a --delete --exclude='.git' --exclude='node_modules' temp-upstream/ main-repo/Equicord/
-      #    rm -rf temp-upstream
 
       - name: Modify .gitignore for dist and executables
         run: |
@@ -179,6 +157,9 @@ jobs:
               mkdir -p "Equicord/dist/$os_name"
               cp -a "$os_dir"/* "Equicord/dist/$os_name/"
               git add Equicord/dist/$os_name/
+              echo "Pushing Equicord/dist/$os_name/"
+              git commit -m "🤖 feat(build/Equicord): Adding `dist/` folder"
+              git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
             fi
           done
 
