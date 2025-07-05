@@ -176,61 +176,61 @@ jobs:
           
           mv dist dist-${{ runner.os }}
 
-      - name: Build custom installer
-        shell: bash
-        run: |
-          cd main-repo
-          
-          # Clone repo installer đã fork
-          git clone --depth 1 https://github.com/segeyy/Installer.git
-          cd Installer
-          
-          # Cài đặt dependencies
-          npm i -g pnpm
-          pnpm i
-          
-          # Build installer cho nền tảng tương ứng
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            pnpm build:win
-            INSTALLER_PATH="dist/win-unpacked/VencordInstaller.exe"
-            OUTPUT_NAME="VencordInstaller-Custom.exe"
-            
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            pnpm build:mac
-            INSTALLER_PATH="dist/mac/VencordInstaller.app"
-            OUTPUT_NAME="VencordInstaller-Custom.app"
-            
-          elif [ "$RUNNER_OS" == "Linux" ]; then
-            # Build GUI và CLI cho Linux
-            go mod tidy
-            
-            # Build GUI cho X11
-            go build -o VencordInstaller-GUI-X11
-            
-            # Build GUI cho Wayland
-            go build --tags wayland -o VencordInstaller-GUI-Wayland
-            
-            # Build CLI
-            go build --tags cli -o VencordInstaller-CLI
-            
-            # Tạo thư mục dist để lưu các bản build
-            mkdir -p dist
-            mv VencordInstaller-* dist/
-            INSTALLER_PATH="dist"
-            OUTPUT_NAME="linux-installers"
-          fi
-          
-          # Tạo thư mục installers trong Vencord
-          mkdir -p ../Vencord/installers
-          
-          # Copy file installer
-          if [ -d "$INSTALLER_PATH" ]; then
-            cp -r "$INSTALLER_PATH"/* "../Vencord/installers/$OUTPUT_NAME"
-          else
-            cp -r "$INSTALLER_PATH" "../Vencord/installers/$OUTPUT_NAME"
-          fi
-          
-          echo "Installer built for $RUNNER_OS"
+      #- name: Build custom installer
+      #  shell: bash
+      #  run: |
+      #    cd main-repo
+      #    
+      #    # Clone repo installer đã fork
+      #    git clone --depth 1 https://github.com/segeyy/Installer.git
+      #    cd Installer
+      #    
+      #    # Cài đặt dependencies
+      #    npm i -g pnpm
+      #    pnpm i
+      #    
+      #    # Build installer cho nền tảng tương ứng
+      #    if [ "$RUNNER_OS" == "Windows" ]; then
+      #      pnpm build:win
+      #      INSTALLER_PATH="dist/win-unpacked/VencordInstaller.exe"
+      #      OUTPUT_NAME="VencordInstaller-Custom.exe"
+      #      
+      #    elif [ "$RUNNER_OS" == "macOS" ]; then
+      #      pnpm build:mac
+      #      INSTALLER_PATH="dist/mac/VencordInstaller.app"
+      #      OUTPUT_NAME="VencordInstaller-Custom.app"
+      #      
+      #    elif [ "$RUNNER_OS" == "Linux" ]; then
+      #      # Build GUI và CLI cho Linux
+      #      go mod tidy
+      #      
+      #      # Build GUI cho X11
+      #      go build -o VencordInstaller-GUI-X11
+      #      
+      #      # Build GUI cho Wayland
+      #      go build --tags wayland -o VencordInstaller-GUI-Wayland
+      #      
+      #      # Build CLI
+      #      go build --tags cli -o VencordInstaller-CLI
+      #      
+      #      # Tạo thư mục dist để lưu các bản build
+      #      mkdir -p dist
+      #      mv VencordInstaller-* dist/
+      #      INSTALLER_PATH="dist"
+      #      OUTPUT_NAME="linux-installers"
+      #    fi
+      #    
+      #    # Tạo thư mục installers trong Vencord
+      #    mkdir -p ../Vencord/installers
+      #    
+      #    # Copy file installer
+      #    if [ -d "$INSTALLER_PATH" ]; then
+      #      cp -r "$INSTALLER_PATH"/* "../Vencord/installers/$OUTPUT_NAME"
+      #    else
+      #      cp -r "$INSTALLER_PATH" "../Vencord/installers/$OUTPUT_NAME"
+      #    fi
+      #    
+      #    echo "Installer built for $RUNNER_OS"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

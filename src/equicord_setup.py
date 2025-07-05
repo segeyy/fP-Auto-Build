@@ -2,10 +2,10 @@ import subprocess
 import os
 
 class NeededStrings:
-    temp_upstream_path: str = 'temp-upstream/'
+    temp_upstream_path: str = 'main-repo/temp-upstream/'
     equicord_url: str = 'https://github.com/Equicord/Equicord.git'
     equicord_path: str = 'main-repo/Equicord/'
-    equicord_temp: str = 'temp-equicord/'
+    equicord_temp: str = 'main-repo/temp-equicord/'
 
 def setup():
     print('Setup Equicord directory')
@@ -14,7 +14,8 @@ def setup():
     subprocess.run([
         'git', 'clone',
         '--depth', '1',
-        '--single-branch', '--branch main', f'{NeededStrings.equicord_url}',
+        '--single-branch', '--branch', 'main',
+        f'{NeededStrings.equicord_url}',
         f'{NeededStrings.equicord_temp}'
     ])
 
@@ -30,7 +31,7 @@ def setup():
     subprocess.run([
         'git', 'clone',
         '--depth', '1',
-        '--single-branch', '--branch main',
+        '--single-branch', '--branch', 'main',
         f'{NeededStrings.equicord_url}',
         f'{NeededStrings.temp_upstream_path}'
     ])
