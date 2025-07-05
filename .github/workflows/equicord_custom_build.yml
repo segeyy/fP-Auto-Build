@@ -142,14 +142,14 @@ jobs:
         with:
           path: dist-artifacts
 
-      - name: Combine artifacts and commit Equicord changes
+      - name: Combine artifacts
         run: |
           cd main-repo
+          mkdir -p Equicord/dist
+
           git config user.name "github-actions"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
-
-          mkdir -p Equicord/dist
 
           for os_dir in dist-artifacts/dist-*; do
             if [ -d "$os_dir" ]; then
@@ -162,6 +162,13 @@ jobs:
               git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
             fi
           done
+
+      - name: Commit Equicord changes
+        run: |
+          cd main-repo
+          git config user.name "github-actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
           git add Equicord
           if ! git diff-index --quiet HEAD -- Equicord; then
