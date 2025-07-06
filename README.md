@@ -20,6 +20,8 @@ Vencord: ![](https://img.shields.io/github/package-json/v/Vendicated/Vencord?sty
 > [!NOTE]
 > This project is in under development, it can maybe changed. This project not completed yet.
 
+- Required: [Git(for cloning)](https://git-scm.com/downloads); [Node JS](https://nodejs.org/en/download/); [pnpm](https://pnpm.io/installation)
+
 - Clone this repository by terminal and go to cloned repository:
 ```shell
 https://github.com/segeyy/fP-Auto-Build.git
@@ -29,11 +31,9 @@ cd fP-Auto-Build/
 > [!IMPORTANT]
 > After choosing build, do for sure these commands:
 > ```shell
-> npm i -g pnpm
 > pnpm i --no-frozen-lockfile
-> pnpm build
 > ```
-> Because there's no gurantee that it will work without these commands and maybe there's no `dist/` folder.
+> Because there's no gurantees that it will work without these commands perfectly.
 
 - Now you need choose build folder which client you prefer using:
     - You can use `Vencord/` or any build folder like `Equicord/` for default Discord. But you need do `pnpm inject` command for injecting your default Discord, **make sure that you closed your default Discord fully**.
