@@ -1,4 +1,4 @@
-name: Vencord Build # Fix custom installer "https://github.com/segeyy/Installer"
+name: Vencord Build # Need to fix custom installer "https://github.com/segeyy/Installer"
 
 on:
   schedule:
@@ -110,6 +110,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.20'
+          # Tắt cache để tránh cảnh báo
+          cache: false
 
       - name: Install platform-specific tools
         shell: bash
@@ -125,7 +127,15 @@ jobs:
               echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.bash_profile
               source ~/.bash_profile
             fi
-            brew install pkg-config sdl2 || echo "SDL2 installation failed"
+            
+            # Kiểm tra trước khi cài để tránh cảnh báo
+            if ! brew list pkg-config &> /dev/null; then
+              brew install pkg-config
+            fi
+            
+            if ! brew list sdl2 &> /dev/null; then
+              brew install sdl2
+            fi
             
           elif [ "$RUNNER_OS" == "Linux" ]; then
             # Cài công cụ build cho Linux
@@ -151,7 +161,9 @@ jobs:
               libgl-dev
             
             # Cài fpm qua gem
-            sudo gem install fpm
+            if ! command -v fpm &> /dev/null; then
+              sudo gem install fpm
+            fi
             
           fi
 
@@ -193,6 +205,9 @@ jobs:
           # Clone repo installer đã fork
           git clone --depth 1 https://github.com/segeyy/Installer.git
           cd Installer
+          
+          # Tạo file go.sum tạm thời để tránh cảnh báo cache
+          touch go.sum
           
           # Cài đặt dependencies Go
           go mod tidy
