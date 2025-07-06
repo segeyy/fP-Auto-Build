@@ -9,7 +9,7 @@ on:
 
 jobs:
   setup:
-    runs_on: ubuntu-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
