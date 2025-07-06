@@ -1,11 +1,11 @@
 name: Building Test
 
-on:
-  push:
-    tags:
-      - '!refs/tags/*'
-    branches:
-      - '*'
+#on:
+#  push:
+#    tags:
+#      - '!refs/tags/*'
+#    branches:
+#      - 'main'
 
 jobs:
   setup:
@@ -68,8 +68,45 @@ jobs:
           path: Equicord
           retention-days: 1
 
-  build:
+  push-setup:
     needs: setup
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MY_PAT }}
+          path: 'main-repo'
+          fetch-depth: 0
+          submodules: false
+          set-safe-directory: false
+
+      - name: Download Equicord setup artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: equicord-setup
+          path: main-repo/Equicord
+
+      - name: Commit and push setup files
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+        run: |
+          cd main-repo
+          git config user.name "github-actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+
+          git add Equicord
+          if ! git diff-index --quiet HEAD -- Equicord; then
+            git commit -m "🤖 feat(setup): Update Equicord setup files $(date +'%Y-%m-%d %H:%M')"
+            git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+          else
+            echo "No changes in Equicord setup files"
+          fi
+
+  build:
+    needs: push-setup
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -116,6 +153,12 @@ jobs:
             rm -rf .git
           fi
 
+          # NOTE: Removing not usefuls levels of dir
+          if [ -d "dist/dist" ]; then
+            mv dist/dist/* dist/
+            rm -rf dist/dist
+          fi
+          
           mv dist dist-${{ runner.os }}
 
       - name: Upload build artifacts
@@ -125,8 +168,8 @@ jobs:
           path: Equicord/dist-*
           retention-days: 1
 
-  combing-and-pushing:
-    needs: [setup, build]
+  push-dist:
+    needs: [push-setup, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -138,92 +181,26 @@ jobs:
           fetch-depth: 0
           submodules: false
           set-safe-directory: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
-      - name: Download Equicord artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: equicord-setup
-          path: Equicord
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
           path: dist-artifacts
 
-      - name: Check for existing build directory
-        id: check-build
+      - name: Check for existing dist directory
+        id: check-dist
         run: |
           cd main-repo
           if [ -d "Equicord/dist" ]; then
-            echo "Build directory exists"
-            echo "build_exists=true" >> $GITHUB_OUTPUT
+            echo "Dist directory exists"
+            echo "dist_exists=true" >> $GITHUB_OUTPUT
           else
-            echo "Build directory does not exist"
-            echo "build_exists=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Compare build artifacts
-        id: compare-builds
-        if: steps.check-build.outputs.build_exists == 'true'
-        run: |
-          cd main-repo
-          echo "Comparing existing build with new artifacts..."
-          
-          # Compare file counts
-          existing_count=$(find Equicord/dist -type f | wc -l)
-          new_count=$(find ../dist-artifacts -type f | wc -l)
-          
-          if [ "$existing_count" -ne "$new_count" ]; then
-            echo "File counts differ (existing: $existing_count, new: $new_count)"
-            echo "needs_update=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          # Compare file sizes and modification dates
-          needs_update=false
-          for os_dir in ../dist-artifacts/dist-*; do
-            os_name=$(basename "$os_dir")
-            if [ ! -d "Equicord/dist/$os_name" ]; then
-              echo "New OS directory found: $os_name"
-              needs_update=true
-              break
-            fi
-            
-            # Compare files
-            for file in $(find "$os_dir" -type f); do
-              rel_path="${file#../dist-artifacts/dist-*/}"
-              dest_file="Equicord/dist/$os_name/$rel_path"
-              
-              if [ ! -f "$dest_file" ]; then
-                echo "New file found: $rel_path"
-                needs_update=true
-                break 2
-              fi
-              
-              # Compare file sizes
-              new_size=$(stat -c%s "$file")
-              existing_size=$(stat -c%s "$dest_file")
-              
-              if [ "$new_size" -ne "$existing_size" ]; then
-                echo "File size differs: $rel_path (existing: $existing_size, new: $new_size)"
-                needs_update=true
-                break 2
-              fi
-            done
-          done
-          
-          if [ "$needs_update" = true ]; then
-            echo "needs_update=true" >> $GITHUB_OUTPUT
-          else
-            echo "No differences found, no update needed"
-            echo "needs_update=false" >> $GITHUB_OUTPUT
+            echo "Dist directory does not exist"
+            echo "dist_exists=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Combine artifacts
-        if: steps.check-build.outputs.build_exists == 'false' || steps.compare-builds.outputs.needs_update == 'true'
+        if: steps.check-dist.outputs.dist_exists == 'false' || steps.compare-dists.outputs.needs_update == 'true'
         run: |
           cd main-repo
           mkdir -p Equicord/dist
@@ -232,16 +209,17 @@ jobs:
             if [ -d "$os_dir" ]; then
               os_name=$(basename "$os_dir")
               echo "Copying artifacts for $os_name..."
+              # Копируем содержимое папки dist-OS напрямую в dist/OS/
               mkdir -p "Equicord/dist/$os_name"
-              rsync -a --delete "$os_dir/" "Equicord/dist/$os_name/"
+              cp -a "$os_dir/"* "Equicord/dist/$os_name/"
             fi
           done
 
           echo "Combined dist contents:"
           ls -la Equicord/dist
 
-      - name: Commit Equicord changes
-        if: steps.check-build.outputs.build_exists == 'false' || steps.compare-builds.outputs.needs_update == 'true'
+      - name: Commit and push dist files
+        if: steps.check-dist.outputs.dist_exists == 'false' || steps.compare-dists.outputs.needs_update == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.MY_PAT }}
           tag: ${{ env.RELEASE_VERSION }}
@@ -251,15 +229,15 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git pull "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
 
-          git add Equicord
-          if ! git diff-index --quiet HEAD -- Equicord; then
-            git commit -m "🤖 feat(build/Equicord): Equicord artifacts $(date +'%Y-%m-%d %H:%M')"
+          git add Equicord/dist
+          if ! git diff-index --quiet HEAD -- Equicord/dist; then
+            git commit -m "🤖 feat(dist): Update Equicord dist artifacts $(date +'%Y-%m-%d %H:%M')"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           else
-            echo "No changes in Equicord directory"
+            echo "No changes in Equicord dist directory"
           fi
 
-      - name: Skip update (no changes needed)
-        if: steps.check-build.outputs.build_exists == 'true' && steps.compare-builds.outputs.needs_update == 'false'
+      - name: Skip dist update (no changes needed)
+        if: steps.check-dist.outputs.dist_exists == 'true' && steps.compare-dists.outputs.needs_update == 'false'
         run: |
-          echo "Build directory exists and no updates needed, skipping deployment"
+          echo "Dist directory exists and no updates needed, skipping deployment"
