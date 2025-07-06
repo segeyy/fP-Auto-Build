@@ -1,11 +1,9 @@
 name: Building Test
 
 on:
-  push:
-    tags:
-      - '!refs/tags/*'
-    branches:
-      - 'main'
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   setup:

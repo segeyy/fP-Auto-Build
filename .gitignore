@@ -1,4 +1,5 @@
 # Add files here which is not unnecessary for publish.
 .github/workflows/test.yml
+.github/workflows/equicord_custom_build.yml
 src/test.txt
 src/test.ts
