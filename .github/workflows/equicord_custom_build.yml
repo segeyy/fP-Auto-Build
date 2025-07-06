@@ -172,6 +172,9 @@ jobs:
           ls -la Equicord/dist
 
       - name: Commit Equicord changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
+          tag: ${{ env.RELEASE_VERSION }}
         run: |
           cd main-repo
           git config user.name "github-actions"
@@ -180,22 +183,13 @@ jobs:
 
           git add Equicord
           if ! git diff-index --quiet HEAD -- Equicord; then
+            python3 main-repo/src/tag_generator.py
             git commit -m "🤖 feat(build/Equicord): Equicord artifacts $(date +'%Y-%m-%d %H:%M')"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
+            gh release create "$tag" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/}-${tag#v}" \
+              --generate-notes
           else
             echo "No changes in Equicord directory"
           fi
-
-      - name: Generate tag Release
-        run: python3 main-repo/src/tag_generator.py
-
-      - name: Upload Release
-        if: ${{ github.ref_name == 'main' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_PAT }}
-          tag: ${{ env.RELEASE_VERSION }}
-        run: |
-          gh release create "$tag" \
-            --repo="$GITHUB_REPOSITORY" \
-            --title="${GITHUB_REPOSITORY#*/}-${tag#v}" \
-            --generate-notes
