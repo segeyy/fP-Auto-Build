@@ -42,4 +42,4 @@ cd fP-Auto-Build/
         - For **Equibop** users needs `Equibop/` folder.
     1. After choosing open custom desktop client settings, ex. `Vesktop Settings`.
     2. Scroll to the end and click `Open Developer Settings`.
-    3. Choose `dist/` folder from your build folder and reload desktop client fully. Enjoy.
+    3. In `dist/` choose folder with any OS from your build folder, it will be `dist-OS/dist-OS` (don't ask why it is twiced) and reload desktop client fully. Enjoy.
