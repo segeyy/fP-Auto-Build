@@ -1,11 +1,11 @@
 name: Building Test
 
-#on:
-#  push:
-#    tags:
-#      - '!refs/tags/*'
-#    branches:
-#      - 'main'
+on:
+  push:
+    tags:
+      - '!refs/tags/*'
+    branches:
+      - 'main'
 
 jobs:
   setup:
