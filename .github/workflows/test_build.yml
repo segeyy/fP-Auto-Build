@@ -253,7 +253,7 @@ jobs:
 
           git add Equicord
           if ! git diff-index --quiet HEAD -- Equicord; then
-            python3 src/tag_generator.py
+            python3 main-repo/src/tag_generator.py
             git commit -m "🤖 feat(build/Equicord): Equicord artifacts $(date +'%Y-%m-%d %H:%M')"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
             gh release create "$tag" \
