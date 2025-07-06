@@ -1,9 +1,20 @@
-# fp-Auto-Build
+# fP-Auto-Build
 A automatic build fakeProfile plugin for Vencord, Equicord, etc...
 
 **Current fork version:**
 
 Vencord: ![](https://img.shields.io/github/package-json/v/Vendicated/Vencord?style=for-the-badge&logo=github&logoColor=d3869b&label=&color=1d2021&labelColor=282828) Equicord: ![](https://img.shields.io/github/package-json/v/Equicord/Equicord?style=for-the-badge&logo=github&logoColor=00ffff&label=&color=1d2021&labelColor=282828)
+
+# Status
+**Vencord:**  
+> Chrome extension: ✅  
+> Firefox extension: ✅  
+> Userscript: ✅  
+> Windows Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)  
+> Linux X11 Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)  
+> Linux Wayland Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)  
+> MacOS Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)  
+
 # How to use
 > [!NOTE]
 > This project is in under development, it can maybe changed. This project not completed yet.
