@@ -1,4 +1,4 @@
-name: Vencord build - W.I.P
+name: Vencord Custom Build
 
 on:
   schedule:
@@ -83,13 +83,6 @@ jobs:
           cd main-repo/Vencord
           echo "hash=$(date +%s)" >> $GITHUB_OUTPUT
 
-      - name: Upload Vencord artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vencord-setup
-          path: main-repo/Vencord
-          retention-days: 1
-
   vencord-build:
     needs: vencord-setup
     strategy:
@@ -99,11 +92,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download Vencord artifact
-        uses: actions/download-artifact@v4
+      - name: Checkout main repository
+        uses: actions/checkout@v4
         with:
-          name: vencord-setup
-          path: main-repo/Vencord
+          token: ${{ secrets.MY_PAT }}
+          path: 'main-repo'
+          fetch-depth: 0
+          submodules: false
+          set-safe-directory: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -271,11 +267,21 @@ jobs:
           
           echo "Installer built for $RUNNER_OS"
 
-      - name: Upload build artifacts
+      - name: Prepare installer artifact
+        shell: bash
+        run: |
+          cd main-repo
+          # Tạo thư mục artifact
+          mkdir -p installer-${{ runner.os }}
+          
+          # Di chuyển installers vào thư mục artifact
+          mv Vencord/installers installer-${{ runner.os }}/installers
+
+      - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ runner.os }}
-          path: main-repo/Vencord
+          name: installer-${{ runner.os }}
+          path: main-repo/installer-${{ runner.os }}
           retention-days: 1
 
   combine-and-commit:
@@ -296,44 +302,33 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Download Vencord artifact
+      - name: Download all installer artifacts
         uses: actions/download-artifact@v4
         with:
-          name: vencord-setup
-          path: main-repo/Vencord
+          path: installer-artifacts
 
-      - name: Download all build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist-artifacts
-
-      - name: Combine artifacts
+      - name: Combine installers
         run: |
           cd main-repo
-          mkdir -p Vencord/dist
           
-          for os_dir in dist-artifacts/dist-*; do
-            if [ -d "$os_dir" ]; then
-              os_name=$(basename "$os_dir")
-              mkdir -p "Vencord/dist/$os_name"
-              cp -a "$os_dir"/* "Vencord/dist/$os_name/"
-              git add Equicord/dist/$os_name/
-            fi
-          done
-
+          # Tạo thư mục installers trong Vencord
           mkdir -p Vencord/installers
-
-          for artifact_dir in dist-artifacts/*; do
-            if [ -d "$artifact_dir/Vencord/installers" ]; then
-              os_name=$(basename "$artifact_dir" | sed 's/dist-//')
-              mkdir -p "Vencord/installers/$os_name"
-              cp -a "$artifact_dir/Vencord/installers/$os_name"/* "Vencord/installers/$os_name/"
+          
+          # Kết hợp tất cả installers từ các artifacts
+          for installer_artifact in installer-artifacts/installer-*; do
+            if [ -d "$installer_artifact" ]; then
+              # Sao chép tất cả thư mục OS từ artifact
+              for os_dir in "$installer_artifact"/installers/*; do
+                if [ -d "$os_dir" ]; then
+                  os_name=$(basename "$os_dir")
+                  mkdir -p "Vencord/installers/$os_name"
+                  cp -a "$os_dir"/* "Vencord/installers/$os_name/"
+                fi
+              done
             fi
           done
           
-          echo "Combined dist contents:"
-          ls -la Vencord/dist
-
+          # Kiểm tra nội dung
           echo "Installers:"
           ls -la Vencord/installers
 
@@ -346,7 +341,7 @@ jobs:
 
           git add Vencord
           if ! git diff-index --quiet HEAD -- Vencord; then
-            git commit -m "🤖 feat(build/Vencord): Vencord artifacts and installers $(date +'%Y-%m-%d %H:%M')"
+            git commit -m "🤖 feat(build/Vencord): Update installers $(date +'%Y-%m-%d %H:%M')"
             git push "https://$GITHUB_ACTOR:${{ secrets.MY_PAT }}@github.com/segeyy/fP-Auto-Build.git" main
           else
             echo "No changes in Vencord directory"
