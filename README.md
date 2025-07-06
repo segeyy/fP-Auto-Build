@@ -16,6 +16,11 @@ Vencord: ![](https://img.shields.io/github/package-json/v/Vendicated/Vencord?sty
 > - MacOS Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)  
 > - CIL Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)
 
+**Equicord:**
+> - Chrome extension: ✅  
+> - Firefox extension: ✅  
+> - Userscript: ✅  
+
 # How to use
 > [!NOTE]
 > This project is in under development, it can maybe changed. This project not completed yet.
