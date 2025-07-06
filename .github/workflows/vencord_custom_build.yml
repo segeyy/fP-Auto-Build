@@ -1,4 +1,4 @@
-name: Vencord Custom Build
+name: Vencord Build # Fix custom installer "https://github.com/segeyy/Installer"
 
 on:
   schedule:
