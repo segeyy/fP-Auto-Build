@@ -68,6 +68,34 @@ async function forceUpdate() {
     return outdated;
 }
 
+function getWindowsName(release: string) {
+    const build = parseInt(release.split(".")[2]);
+    if (build >= 22000) return "Windows 11";
+    if (build >= 10240) return "Windows 10";
+    if (build >= 9200) return "Windows 8.1";
+    if (build >= 7600) return "Windows 7";
+    return `Windows (${release})`;
+}
+
+function getMacOSName(release: string) {
+    const major = parseInt(release.split(".")[0]);
+    if (major === 24) return "MacOS 15 (Sequoia)";
+    if (major === 23) return "MacOS 14 (Sonoma)";
+    if (major === 22) return "MacOS 13 (Ventura)";
+    if (major === 21) return "MacOS 12 (Monterey)";
+    if (major === 20) return "MacOS 11 (Big Sur)";
+    if (major === 19) return "MacOS 10.15 (Catalina)";
+    return `MacOS (${release})`;
+}
+
+function platformName() {
+    if (typeof DiscordNative === "undefined") return window.navigator.platform;
+    if (DiscordNative.process.platform === "win32") return `${getWindowsName(DiscordNative.os.release)}`;
+    if (DiscordNative.process.platform === "darwin") return `${getMacOSName(DiscordNative.os.release)} (${DiscordNative.process.arch === "arm64" ? "Apple Silicon" : "Intel Silicon"})`;
+    if (DiscordNative.process.platform === "linux") return `Linux (${DiscordNative.os.release})`;
+    return DiscordNative.process.platform;
+}
+
 async function generateDebugInfoMessage() {
     const { RELEASE_CHANNEL } = window.GLOBAL_ENV;
 
@@ -87,11 +115,7 @@ async function generateDebugInfoMessage() {
             `v${VERSION} • [${gitHash}](<https://github.com/Equicord/Equicord/commit/${gitHash}>)` +
             `${SettingsPlugin.additionalInfo} - ${Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(BUILD_TIMESTAMP)}`,
         Client: `${RELEASE_CHANNEL} ~ ${client}`,
-        Platform: typeof DiscordNative !== "undefined" ?
-            `${DiscordNative.process.platform === "darwin" ?
-                (DiscordNative.process.arch === "arm64" ? "MacSilicon" : "MacIntel") :
-                (DiscordNative.process.platform === "win32" && DiscordNative.process.arch === "x64" ? "Windows" : DiscordNative.process.platform)}` :
-            window.navigator.platform
+        Platform: platformName()
     };
 
     if (IS_DISCORD_DESKTOP) {
@@ -298,7 +322,7 @@ export default definePlugin({
             && ((props.channel.id === SUPPORT_CHANNEL_ID && equicordSupport))
             && props.message.content?.includes("update");
 
-        const contentWords = (props.message.content?.toLowerCase().match(/\b\w+\b/g) ?? []);
+        const contentWords = (props.message.content?.toLowerCase().match(/`\w+`/g) ?? []).map(e => e.slice(1, -1));
         const matchedPlugins = Object.keys(Vencord.Plugins.plugins).filter(name => contentWords.includes(name.toLowerCase()));
         const matchedPlugin = matchedPlugins.sort((a, b) => b.length - a.length)[0];
         const pluginData = matchedPlugin && Vencord.Plugins.plugins[matchedPlugin];
