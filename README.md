@@ -10,12 +10,6 @@ Vencord: ![](https://img.shields.io/github/package-json/v/Vendicated/Vencord?sty
 > - Chrome extension: ✅  
 > - Firefox extension: ✅  
 > - Userscript: ✅  
-> - Windows Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)  
-> - Linux X11 Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)  
-> - Linux Wayland Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)  
-> - MacOS Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)  
-> - CIL Installer: ❌ ([Custom installer](https://github.com/segeyy/Installer) still work in process)
-
 **Equicord:**
 > - Chrome extension: ✅  
 > - Firefox extension: ✅  
