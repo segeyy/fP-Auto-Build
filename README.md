@@ -1,5 +1,5 @@
 # fP-Auto-Build
-A automatic build fakeProfile plugin for Vencord, Equicord, etc...
+Extension, userscript auto build for Vencord, Equicord with fakeProfile plugin.
 
 **Current fork version:**
 
