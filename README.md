@@ -9,7 +9,8 @@ Vencord: ![](https://img.shields.io/github/package-json/v/Vendicated/Vencord?sty
 **Vencord:**  
 > - Chrome extension: ✅  
 > - Firefox extension: ✅  
-> - Userscript: ✅  
+> - Userscript: ✅
+  
 **Equicord:**
 > - Chrome extension: ✅  
 > - Firefox extension: ✅  
