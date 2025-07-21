@@ -14,12 +14,11 @@ import { Message, User } from "@vencord/discord-types";
 import { GuildMemberStore, RelationshipStore } from "@webpack/common";
 
 interface UsernameProps {
-    author: { nick: string; };
+    author: { nick: string; guildId: string; };
     message: Message;
     withMentionPrefix?: boolean;
     isRepliedMessage: boolean;
     userOverride?: User;
-    guildId: string;
 }
 
 const settings = definePluginSettings({
@@ -149,10 +148,10 @@ export default definePlugin({
     ],
     settings,
     getUsername,
-    renderUsername: ErrorBoundary.wrap(({ author, message, isRepliedMessage, withMentionPrefix, userOverride, guildId }: UsernameProps) => {
+    renderUsername: ErrorBoundary.wrap(({ author, message, isRepliedMessage, withMentionPrefix, userOverride }: UsernameProps) => {
         try {
             const user = userOverride ?? message.author;
-            const username = getUsername(user, guildId);
+            const username = getUsername(user, author.guildId);
 
             const { nick } = author;
             const prefix = withMentionPrefix ? "@" : "";
